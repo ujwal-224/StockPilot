@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ────────────────────────────────────────────────────────────────────── */
+body {
+  background-color: #E7E4DC;
+  color: #211a1a;
+  -webkit-font-smoothing: antialiased;
+  min-height: max(884px, 100dvh);
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ── Margin rules (left spine accents) ───────────────────────────────────────── */
+.margin-rule-maroon { border-left: 4px solid #6E2A2E; }
+.margin-rule-gold   { border-left: 4px solid #BD8A1E; }
+.margin-rule-red    { border-left: 4px solid #ba1a1a; }
+
+/* Bahi-khata spine variants */
+.bahi-spine         { border-left: 4px solid #6E2A2E; }
+.bahi-spine-red     { border-left: 4px solid #B33B2E; }
+.bahi-spine-gold    { border-left: 4px solid #D4A017; }
+.bahi-khata-spine   { border-left: 4px solid #51141a; }
+
+/* ── Ledger card (Analytics) ─────────────────────────────────────────────────── */
+.ledger-card {
+  position: relative;
+  background: #F4F2EC;
+  border: 1px solid #D8D4C7;
+  border-radius: 0.25rem;
+  padding-left: 20px;
+}
+.ledger-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #51141a;
+  border-radius: 0;
+}
+
+/* ── Hairline borders ────────────────────────────────────────────────────────── */
+.hairline-border { border: 1px solid #D8D4C7; }
+.hairline-bottom { border-bottom: 1px solid #E0DCD0; }
+.hairline-top    { border-top:    1px solid #E0DCD0; }
+.ruled-line      { border-bottom: 1px solid #D8D4C7; }
+
+/* ── Inventory search input ─────────────────────────────────────────────────── */
+.input-bahi {
+  background-color: #E7E4DC;
+  border-bottom: 1px solid #D8D4C7;
+  transition: border-bottom-width 0.1s ease;
+}
+.input-bahi:focus {
+  border-bottom-width: 2px;
+  outline: none;
+}
+
+/* ── Safe-area & utilities ──────────────────────────────────────────────────── */
+.safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
