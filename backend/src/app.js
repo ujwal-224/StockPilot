@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/error.middleware.js";
 import productRoutes from "./routes/product.routes.js";
 import transactionRoutes from "./routes/transaction.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.get("/", (req, res) => {
 app.use("/api/products", productRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // ===============================
 // Global Error Handler
