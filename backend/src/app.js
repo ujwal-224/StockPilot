@@ -3,6 +3,7 @@ import cors from "cors";
 
 import { errorHandler } from "./middleware/error.middleware.js";
 import productRoutes from "./routes/product.routes.js";
+import transactionRoutes from "./routes/transaction.routes.js";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.get("/", (req, res) => {
 // API Routes
 // ===============================
 app.use("/api/products", productRoutes);
+app.use("/api/transactions", transactionRoutes);
 
 // ===============================
 // Global Error Handler
