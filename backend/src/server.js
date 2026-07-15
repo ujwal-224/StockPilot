@@ -4,9 +4,13 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import app from "./app.js";
+import connectDB from "./config/database.js";
 
 // Read PORT from .env
 const PORT = process.env.PORT || 5000;
+
+// Connect to database before starting server
+await connectDB();
 
 // Start Server
 app.listen(PORT, () => {
