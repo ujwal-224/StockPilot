@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 
 import { errorHandler } from "./middleware/error.middleware.js";
+import productRoutes from "./routes/product.routes.js";
 
 const app = express();
 
@@ -21,6 +22,11 @@ app.get("/", (req, res) => {
     message: "StockPilot Backend Running",
   });
 });
+
+// ===============================
+// API Routes
+// ===============================
+app.use("/api/products", productRoutes);
 
 // ===============================
 // Global Error Handler

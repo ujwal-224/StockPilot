@@ -5,6 +5,7 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
+    "predev": "kill-port 5000 || true",
     "start": "node src/server.js",
     "dev": "nodemon --watch src --watch .env src/server.js"
   },
@@ -16,6 +17,7 @@
     "mongoose": "^9.7.4"
   },
   "devDependencies": {
+    "kill-port": "^2.0.1",
     "nodemon": "^3.1.0"
   }
 }
