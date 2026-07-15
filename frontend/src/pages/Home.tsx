@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import { getDashboardData } from '../services/dashboardService'
+import { SummaryCard, LoadingCard } from '../components/SharedComponents'
+import { getNotifications, getNotifIconColor } from '../services/notificationService'
+import type { BackendProduct, AppNotification } from '../types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -9,14 +12,6 @@ interface MappedAttentionItem {
   units: string
   progressPct: number
   variant: 'danger' | 'warning'
-}
-
-interface MappedActivityItem {
-  id: string
-  type: string
-  label: string
-  time: string
-  icon: string
 }
 
 // ─── Time Helper ─────────────────────────────────────────────────────────────
@@ -34,6 +29,7 @@ function formatRelativeTime(dateString: string): string {
   if (diffHours < 24) return `${diffHours}h ago`
   return `${diffDays}d ago`
 }
+
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -57,28 +53,25 @@ function NeedsAttentionRow({ item, isLast }: { item: MappedAttentionItem; isLast
   )
 }
 
-function ActivityRow({ item, isLast }: { item: MappedActivityItem; isLast: boolean }) {
-  return (
-    <div className={`margin-rule-maroon p-4 flex items-center gap-4 ${isLast ? '' : 'hairline-bottom'} hover:bg-surface-container-low transition-colors cursor-pointer`}>
-      {item.type === 'voice' ? (
-        <div className="w-12 h-12 flex-shrink-0 bg-secondary-fixed rounded-lg flex items-center justify-center text-on-secondary-fixed-variant">
-          <span className="material-symbols-outlined">{item.icon}</span>
-        </div>
-      ) : (
-        <div className="w-12 h-12 flex-shrink-0 bg-tertiary-fixed rounded-lg flex items-center justify-center text-on-tertiary-fixed-variant">
-          <span className="material-symbols-outlined">{item.icon}</span>
-        </div>
-      )}
+function ActivityRow({ item, isLast }: { item: AppNotification; isLast: boolean }) {
+  const iconColor = getNotifIconColor(item.type)
+  const timeStr = formatRelativeTime(new Date(item.timestamp).toISOString())
 
-      <div className="flex-grow min-w-0">
-        <p className="font-body-md text-on-surface truncate">{item.label}</p>
-        <p className="font-body-sm text-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
-          <span className="material-symbols-outlined text-[14px]">history</span>
-          {item.time}
-        </p>
+  return (
+    <div className={`p-4 flex items-start gap-4 ${isLast ? '' : 'hairline-bottom'} hover:bg-surface-container-low transition-colors`}>
+      <div className="w-12 h-12 flex-shrink-0 bg-surface-container-high rounded-lg flex items-center justify-center">
+        <span className={`material-symbols-outlined ${iconColor}`}>{item.icon}</span>
       </div>
 
-      <span className="material-symbols-outlined text-secondary flex-shrink-0">chevron_right</span>
+      <div className="flex-grow min-w-0">
+        <div className="flex justify-between items-baseline gap-2">
+          <p className="font-body-md font-semibold text-on-surface truncate">{item.title}</p>
+          <span className="font-body-sm text-[10px] text-outline flex-shrink-0">{timeStr}</span>
+        </div>
+        <p className="font-body-sm text-xs text-on-surface-variant mt-0.5 leading-normal">
+          {item.description}
+        </p>
+      </div>
     </div>
   )
 }
@@ -94,17 +87,16 @@ export default function Home() {
     todayTransactions: 0,
   })
   const [attentionItems, setAttentionItems] = useState<MappedAttentionItem[]>([])
-  const [activityItems, setActivityItems] = useState<MappedActivityItem[]>([])
+  const [activities, setActivities] = useState<AppNotification[]>([])
 
   const today = new Date().toLocaleDateString('en-IN', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/api/dashboard`)
+    getDashboardData()
       .then((res) => {
-        const { totalProducts, lowStockCount, todayTransactions, lowStockProducts, recentTransactions } = res.data.data
+        const { totalProducts, lowStockCount, todayTransactions, lowStockProducts } = res.data
 
         setStats({
           totalProducts,
@@ -113,7 +105,7 @@ export default function Home() {
         })
 
         // Map low stock products to attention rows
-        const mappedAttention = lowStockProducts.map((p: any) => ({
+        const mappedAttention = lowStockProducts.map((p: BackendProduct) => ({
           id: p._id,
           name: p.name,
           units: `${p.stock} ${p.unit}`,
@@ -121,39 +113,6 @@ export default function Home() {
           variant: p.stock === 0 ? ('danger' as const) : ('warning' as const),
         }))
         setAttentionItems(mappedAttention)
-
-        // Map recent transactions to activity rows
-        const mappedActivity = recentTransactions.map((t: any) => {
-          const prodName = t.product ? t.product.name : 'Unknown Product'
-          const prodUnit = t.product ? t.product.unit : 'units'
-          let typeLabel = ''
-          let icon = 'history'
-          let rowType = 'voice'
-
-          if (t.type === 'SALE') {
-            typeLabel = 'Sold'
-            icon = 'trending_down'
-            rowType = 'voice'
-          } else if (t.type === 'PURCHASE') {
-            typeLabel = 'Purchased'
-            icon = 'trending_up'
-            rowType = 'chat'
-          } else if (t.type === 'ADJUSTMENT') {
-            typeLabel = 'Adjusted'
-            icon = 'sync_alt'
-            rowType = 'chat'
-          }
-
-          return {
-            id: t._id,
-            type: rowType,
-            label: `${typeLabel} ${t.quantity} ${prodUnit} of ${prodName}`,
-            time: formatRelativeTime(t.createdAt),
-            icon,
-          }
-        })
-        setActivityItems(mappedActivity)
-
         setLoading(false)
       })
       .catch(() => {
@@ -162,15 +121,18 @@ export default function Home() {
       })
   }, [])
 
+  useEffect(() => {
+    const loadNotifs = () => {
+      const all = getNotifications()
+      setActivities(all.slice(0, 5))
+    }
+    loadNotifs()
+    window.addEventListener('notifications-updated', loadNotifs)
+    return () => window.removeEventListener('notifications-updated', loadNotifs)
+  }, [])
+
   if (loading) {
-    return (
-      <main className="flex-grow p-5 md:p-8 lg:p-10 pb-28 lg:pb-10 max-w-5xl mx-auto w-full flex items-center justify-center min-h-[50vh]">
-        <div className="ledger-card p-8 text-center rounded-lg w-full max-w-md">
-          <span className="material-symbols-outlined text-4xl text-outline mb-2 block animate-spin">sync</span>
-          <p className="font-body-md text-on-surface-variant">Loading dashboard...</p>
-        </div>
-      </main>
-    )
+    return <LoadingCard message="Loading dashboard..." fullPage={true} />
   }
 
   if (error) {
@@ -194,32 +156,24 @@ export default function Home() {
 
       {/* ── Stat Row ── */}
       <section className="grid grid-cols-3 gap-3 md:gap-4">
-        <div className="bg-ledger-surface rounded-card hairline-border margin-rule-maroon p-3 md:p-5 flex flex-col justify-between h-24 md:h-28 lg:h-32">
-          <span className="font-body-sm text-[11px] md:text-xs leading-tight text-on-surface-variant uppercase tracking-wider">
-            Total Items
-          </span>
-          <span className="font-number-display text-right text-primary text-xl md:text-2xl lg:text-3xl">
-            {stats.totalProducts}
-          </span>
-        </div>
-
-        <div className="bg-brand-turmeric rounded-card border border-[#9c7118] margin-rule-gold p-3 md:p-5 flex flex-col justify-between h-24 md:h-28 lg:h-32">
-          <span className="font-body-sm text-[11px] md:text-xs leading-tight text-white uppercase tracking-wider font-semibold">
-            Low Stock
-          </span>
-          <span className="font-number-display text-right text-white text-xl md:text-2xl lg:text-3xl">
-            {stats.lowStockCount}
-          </span>
-        </div>
-
-        <div className="bg-ledger-surface rounded-card hairline-border margin-rule-maroon p-3 md:p-5 flex flex-col justify-between h-24 md:h-28 lg:h-32">
-          <span className="font-body-sm text-[11px] md:text-xs leading-tight text-on-surface-variant uppercase tracking-wider">
-            Today's Updates
-          </span>
-          <span className="font-number-display text-right text-primary text-xl md:text-2xl lg:text-3xl">
-            {stats.todayTransactions}
-          </span>
-        </div>
+        <SummaryCard
+          title="Total Items"
+          value={stats.totalProducts}
+          variant="maroon"
+          icon="inventory_2"
+        />
+        <SummaryCard
+          title="Low Stock"
+          value={stats.lowStockCount}
+          variant={stats.lowStockCount > 0 ? 'low-stock' : 'default'}
+          icon="warning"
+        />
+        <SummaryCard
+          title="Today's Updates"
+          value={stats.todayTransactions}
+          variant="gold"
+          icon="update"
+        />
       </section>
 
       {/* ── Two-column grid (desktop) ── */}
@@ -228,9 +182,6 @@ export default function Home() {
         <section className="space-y-3">
           <div className="flex justify-between items-center">
             <h2 className="font-headline-md text-lg md:text-xl text-on-surface">Needs Attention</h2>
-            <button className="text-primary font-body-sm text-sm font-semibold underline decoration-2 underline-offset-4 hover:text-primary-container transition-colors">
-              View All
-            </button>
           </div>
           <div className="bg-ledger-surface rounded-card hairline-border overflow-hidden">
             {attentionItems.length === 0 ? (
@@ -250,19 +201,26 @@ export default function Home() {
         <section className="space-y-3">
           <div className="flex justify-between items-center">
             <h2 className="font-headline-md text-lg md:text-xl text-on-surface">Recent Activity</h2>
-            <button className="text-primary font-body-sm text-sm font-semibold underline decoration-2 underline-offset-4 hover:text-primary-container transition-colors">
+            <button
+              onClick={() => {
+                window.history.pushState(null, '', '/transactions')
+                window.dispatchEvent(new PopStateEvent('popstate'))
+              }}
+              className="text-primary font-body-sm text-sm font-semibold underline decoration-2 underline-offset-4 hover:text-primary-container transition-colors"
+            >
               View All
             </button>
           </div>
+
           <div className="bg-ledger-surface rounded-card hairline-border overflow-hidden">
-            {activityItems.length === 0 ? (
+            {activities.length === 0 ? (
               <div className="p-8 text-center">
                 <span className="material-symbols-outlined text-4xl text-outline mb-2 block">history</span>
-                <p className="font-body-md text-on-surface-variant">No recent transactions recorded.</p>
+                <p className="font-body-md text-on-surface-variant">No recent activity recorded.</p>
               </div>
             ) : (
-              activityItems.map((item, idx) => (
-                <ActivityRow key={item.id} item={item} isLast={idx === activityItems.length - 1} />
+              activities.map((item, idx) => (
+                <ActivityRow key={item.id} item={item} isLast={idx === activities.length - 1} />
               ))
             )}
           </div>

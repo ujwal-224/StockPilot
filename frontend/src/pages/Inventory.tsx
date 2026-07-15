@@ -1,37 +1,12 @@
 import { useState, useMemo, useEffect } from 'react'
-import axios from 'axios'
 import toast, { Toaster } from 'react-hot-toast'
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock'
-
-interface InventoryItem {
-  id: string
-  name: string
-  qty: string
-  progressPct: number
-  status: StockStatus
-  category: string
-  price: number
-  stock: number
-  unit: string
-  threshold: number
-  image: string
-}
+import { getProducts, createProduct, updateProduct, deleteProduct } from '../services/productService'
+import { createTransaction } from '../services/transactionService'
+import type { StockStatus, InventoryItem, BackendProduct } from '../types'
+import { LoadingCard, EmptyState } from '../components/SharedComponents'
+import { addNotification } from '../services/notificationService'
 
 // ─── Backend → UI mapper ──────────────────────────────────────────────────────
-
-interface BackendProduct {
-  _id: string
-  name: string
-  stock: number
-  unit: string
-  threshold: number
-  price?: number
-  category?: string
-  image?: string
-}
 
 function mapProduct(p: BackendProduct): InventoryItem {
   const status: StockStatus =
@@ -97,11 +72,23 @@ export default function Inventory() {
     image: '',
   })
 
+  // Transaction Modal State
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false)
+  const [transactionForm, setTransactionForm] = useState({
+    productId: '',
+    type: 'SALE',
+    quantity: '',
+    note: '',
+  })
+
+  const selectedProduct = useMemo(() => {
+    return allItems.find((item) => item.id === transactionForm.productId)
+  }, [allItems, transactionForm.productId])
+
   const fetchProducts = () => {
-    axios
-      .get<{ success: boolean; data: BackendProduct[] }>(`${import.meta.env.VITE_API_URL}/api/products`)
+    getProducts()
       .then((res) => {
-        setAllItems(res.data.data.map(mapProduct))
+        setAllItems(res.data.map(mapProduct))
         setLoading(false)
       })
       .catch(() => {
@@ -168,23 +155,115 @@ export default function Inventory() {
     setIsModalOpen(true)
   }
 
+  const openTransactionModal = () => {
+    setTransactionForm({
+      productId: '',
+      type: 'SALE',
+      quantity: '',
+      note: '',
+    })
+    setIsTransactionModalOpen(true)
+  }
+
+  const handleTransactionInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target
+    setTransactionForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handleTransactionSave = (e: React.FormEvent) => {
+    e.preventDefault()
+    const product = allItems.find((p) => p.id === transactionForm.productId)
+    const productName = product ? product.name : 'Unknown Product'
+    const productUnit = product ? ` ${product.unit}` : ''
+
+    createTransaction({
+      product: transactionForm.productId,
+      type: transactionForm.type as 'SALE' | 'PURCHASE' | 'ADJUSTMENT',
+      quantity: Number(transactionForm.quantity),
+      note: transactionForm.note,
+    })
+      .then((res) => {
+        toast.success("Transaction recorded successfully")
+        
+        const newTrans = res.data
+        const quantity = Number(transactionForm.quantity)
+        const type = transactionForm.type as 'SALE' | 'PURCHASE' | 'ADJUSTMENT'
+        
+        let notifTitle = ''
+        let notifDesc = ''
+        let notifIcon = ''
+        let notifType: 'sale' | 'purchase' | 'adjustment' = 'sale'
+
+        if (type === 'SALE') {
+          notifTitle = 'Sale Recorded'
+          notifDesc = `Sold ${quantity}${productUnit} of ${productName}.`
+          notifIcon = 'shopping_cart'
+          notifType = 'sale'
+        } else if (type === 'PURCHASE') {
+          notifTitle = 'Purchase Recorded'
+          notifDesc = `Purchased ${quantity}${productUnit} of ${productName}.`
+          notifIcon = 'local_shipping'
+          notifType = 'purchase'
+        } else if (type === 'ADJUSTMENT') {
+          notifTitle = 'Stock Adjusted'
+          notifDesc = `Adjusted stock of ${productName}.`
+          notifIcon = 'sync_alt'
+          notifType = 'adjustment'
+        }
+
+        addNotification({
+          id: `trans-${newTrans._id}`,
+          type: notifType,
+          title: notifTitle,
+          description: notifDesc,
+          icon: notifIcon
+        })
+
+        setIsTransactionModalOpen(false)
+        setTransactionForm({
+          productId: '',
+          type: 'SALE',
+          quantity: '',
+          note: '',
+        })
+        fetchProducts()
+      })
+      .catch((error: unknown) => {
+        console.error('Error recording transaction:', error)
+        const err = error as { response?: { data?: { message?: string } } }
+        toast.error(err.response?.data?.message || "Failed to record transaction")
+      })
+  }
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
     const { name, category, price, stock, unit, threshold, image } = formData
 
     if (editingId) {
-      axios
-        .put(`${import.meta.env.VITE_API_URL}/api/products/${editingId}`, {
-          name,
-          category,
-          price: Number(price),
-          stock: Number(stock),
-          unit,
-          threshold: Number(threshold),
-          image,
-        })
-        .then(() => {
+      updateProduct(editingId, {
+        name,
+        category,
+        price: Number(price),
+        stock: Number(stock),
+        unit,
+        threshold: Number(threshold),
+        image,
+      })
+        .then((res) => {
           toast.success("Product updated successfully")
+          const updatedProd = res.data
+          addNotification({
+            id: `updated-${editingId}-${Date.now()}`,
+            type: 'product_updated',
+            title: 'Product Updated',
+            description: `Updated "${updatedProd.name}".`,
+            icon: 'edit'
+          })
           setIsModalOpen(false)
           setFormData({
             name: '',
@@ -203,18 +282,25 @@ export default function Inventory() {
           toast.error("Failed to update product")
         })
     } else {
-      axios
-        .post(`${import.meta.env.VITE_API_URL}/api/products`, {
-          name,
-          category,
-          price: Number(price),
-          stock: Number(stock),
-          unit,
-          threshold: Number(threshold),
-          image,
-        })
-        .then(() => {
+      createProduct({
+        name,
+        category,
+        price: Number(price),
+        stock: Number(stock),
+        unit,
+        threshold: Number(threshold),
+        image,
+      })
+        .then((res) => {
           toast.success("Product added successfully")
+          const newProd = res.data
+          addNotification({
+            id: `added-${newProd._id}`,
+            type: 'product_added',
+            title: 'Product Added',
+            description: `Added "${newProd.name}" to inventory.`,
+            icon: 'inventory_2'
+          })
           setIsModalOpen(false)
           setFormData({
             name: '',
@@ -242,10 +328,19 @@ export default function Inventory() {
   const confirmDeleteProduct = () => {
     if (!deletingId) return
 
-    axios
-      .delete(`${import.meta.env.VITE_API_URL}/api/products/${deletingId}`)
+    const product = allItems.find((p) => p.id === deletingId)
+    const productName = product ? product.name : 'Unknown Product'
+
+    deleteProduct(deletingId)
       .then(() => {
         toast.success("Product deleted successfully")
+        addNotification({
+          id: `deleted-${deletingId}-${Date.now()}`,
+          type: 'product_deleted',
+          title: 'Product Deleted',
+          description: `Removed "${productName}" from inventory.`,
+          icon: 'delete'
+        })
         setDeletingId(null)
         fetchProducts()
       })
@@ -291,12 +386,20 @@ export default function Inventory() {
             {loading ? 'Loading…' : `${filteredItems.length} items · ${lowCount} low stock · ${outCount} out of stock`}
           </p>
         </div>
-        <button
-          onClick={openModal}
-          className="bg-primary text-white px-4 py-2 font-body-sm text-sm font-semibold rounded-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-1.5"
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span> Add Product
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={openTransactionModal}
+            className="border border-bahi-hairline bg-ledger-surface text-secondary hover:bg-surface-container-high px-4 py-2 font-body-sm text-sm font-semibold rounded-sm transition-all active:scale-95 flex items-center gap-1.5"
+          >
+            <span className="material-symbols-outlined text-[18px]">swap_horiz</span> Record Transaction
+          </button>
+          <button
+            onClick={openModal}
+            className="bg-primary text-white px-4 py-2 font-body-sm text-sm font-semibold rounded-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-1.5"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span> Add Product
+          </button>
+        </div>
       </div>
 
       {/* ── Search & Filters ── */}
@@ -337,36 +440,43 @@ export default function Inventory() {
       <section className="space-y-3">
         <div className="flex justify-between items-center lg:hidden">
           <h3 className="font-headline-sm text-primary">Live Inventory</h3>
-          <button
-            onClick={openModal}
-            className="bg-primary text-white px-3 py-1.5 font-body-sm text-[12px] font-semibold rounded-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-[16px]">add</span> Add Product
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={openTransactionModal}
+              className="border border-bahi-hairline bg-ledger-surface text-secondary hover:bg-surface-container-high px-2.5 py-1.5 font-body-sm text-[11px] font-semibold rounded-sm transition-all active:scale-95 flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[14px]">swap_horiz</span> Record
+            </button>
+            <button
+              onClick={openModal}
+              className="bg-primary text-white px-2.5 py-1.5 font-body-sm text-[11px] font-semibold rounded-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[14px]">add</span> Add Product
+            </button>
+          </div>
         </div>
 
         {/* Loading state */}
-        {loading && (
-          <div className="ledger-card p-8 text-center rounded-lg">
-            <span className="material-symbols-outlined text-4xl text-outline mb-2 block animate-spin">sync</span>
-            <p className="font-body-md text-on-surface-variant">Loading inventory...</p>
-          </div>
-        )}
+        {loading && <LoadingCard message="Loading inventory..." />}
 
         {/* Error state */}
         {!loading && error && (
-          <div className="ledger-card p-8 text-center rounded-lg">
-            <span className="material-symbols-outlined text-4xl text-stock-red mb-2 block">error_outline</span>
-            <p className="font-body-md text-stock-red">Unable to load inventory.</p>
-          </div>
+          <EmptyState
+            icon="error_outline"
+            message="Unable to load inventory."
+            paddingClass="p-8"
+            textColor="text-stock-red"
+            iconColor="text-stock-red"
+          />
         )}
 
         {/* Empty search result */}
         {!loading && !error && filteredItems.length === 0 && (
-          <div className="ledger-card p-8 text-center rounded-lg">
-            <span className="material-symbols-outlined text-4xl text-outline mb-2 block">inventory_2</span>
-            <p className="font-body-md text-on-surface-variant">No items match your search.</p>
-          </div>
+          <EmptyState
+            icon="inventory_2"
+            message="No items match your search."
+            paddingClass="p-8"
+          />
         )}
 
         {/* Product cards */}
@@ -425,7 +535,7 @@ export default function Inventory() {
 
       {/* ── Add Product Modal ── */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-transparent z-50 flex items-center justify-center p-4">
           <div className="bg-ledger-surface max-w-md w-full rounded-lg border border-bahi-hairline bahi-spine p-6 shadow-xl relative space-y-4">
             <div className="flex justify-between items-center hairline-bottom pb-3">
               <h3 className="font-headline-sm text-primary">
@@ -580,7 +690,7 @@ export default function Inventory() {
 
       {/* ── Delete Confirmation Modal ── */}
       {deletingId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-transparent z-50 flex items-center justify-center p-4">
           <div className="bg-ledger-surface max-w-md w-full rounded-lg border border-bahi-hairline bahi-spine-red p-6 shadow-xl relative space-y-4">
             <div className="flex justify-between items-center hairline-bottom pb-3">
               <h3 className="font-headline-sm text-stock-red">Delete Product</h3>
@@ -617,6 +727,113 @@ export default function Inventory() {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Record Transaction Modal ── */}
+      {isTransactionModalOpen && (
+        <div className="fixed inset-0 bg-transparent z-50 flex items-center justify-center p-4">
+          <div className="bg-ledger-surface max-w-md w-full rounded-lg border border-bahi-hairline bahi-spine p-6 shadow-xl relative space-y-4">
+            <div className="flex justify-between items-center hairline-bottom pb-3">
+              <h3 className="font-headline-sm text-primary">Record Transaction</h3>
+              <button
+                onClick={() => setIsTransactionModalOpen(false)}
+                className="text-secondary hover:text-primary transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleTransactionSave} className="space-y-4 font-body-sm text-sm">
+              <div className="flex flex-col gap-1">
+                <label className="font-bold text-on-surface">Product</label>
+                <select
+                  name="productId"
+                  required
+                  value={transactionForm.productId}
+                  onChange={handleTransactionInputChange}
+                  className="w-full h-11 px-3 input-bahi font-body-md text-sm rounded-sm bg-ledger-paper"
+                >
+                  <option value="" disabled>Select Product</option>
+                  {allItems.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedProduct && (
+                <div className="bg-ledger-paper p-3 rounded border border-bahi-hairline space-y-1 font-body-sm text-xs text-secondary mt-1">
+                  <div className="flex justify-between">
+                    <span>Current Stock:</span>
+                    <span className="font-bold text-on-surface">{selectedProduct.stock}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Current Unit:</span>
+                    <span className="font-bold text-on-surface">{selectedProduct.unit}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1">
+                <label className="font-bold text-on-surface">Transaction Type</label>
+                <select
+                  name="type"
+                  required
+                  value={transactionForm.type}
+                  onChange={handleTransactionInputChange}
+                  className="w-full h-11 px-3 input-bahi font-body-md text-sm rounded-sm bg-ledger-paper"
+                >
+                  <option value="SALE">SALE</option>
+                  <option value="PURCHASE">PURCHASE</option>
+                  <option value="ADJUSTMENT">ADJUSTMENT</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-bold text-on-surface">Quantity</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  min="1"
+                  required
+                  value={transactionForm.quantity}
+                  onChange={handleTransactionInputChange}
+                  placeholder="0"
+                  className="w-full h-11 px-3 input-bahi font-body-md text-sm rounded-sm"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-bold text-on-surface">Note</label>
+                <textarea
+                  name="note"
+                  value={transactionForm.note}
+                  onChange={handleTransactionInputChange}
+                  placeholder="Add a transaction note..."
+                  rows={3}
+                  className="w-full p-3 input-bahi font-body-md text-sm rounded-sm resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 hairline-top">
+                <button
+                  type="button"
+                  onClick={() => setIsTransactionModalOpen(false)}
+                  className="px-4 h-10 border border-bahi-hairline text-secondary hover:bg-surface-container-high rounded-sm transition-all font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 h-10 bg-primary text-white hover:bg-primary-container rounded-sm transition-all font-semibold"
+                >
+                  Record Transaction
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

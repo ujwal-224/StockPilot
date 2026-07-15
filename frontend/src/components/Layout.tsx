@@ -1,5 +1,13 @@
-import { useEffect } from 'react'
-import type { PageId } from '../types'
+import { useEffect, useState, useRef } from 'react'
+import type { PageId, AppNotification } from '../types'
+import { getProducts } from '../services/productService'
+import { getTransactions } from '../services/transactionService'
+import {
+  getNotifications,
+  syncWithBackend,
+  markAllAsRead,
+  getNotifIconColor
+} from '../services/notificationService'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -7,17 +15,19 @@ const OWNER_AVATAR =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuB5v_YyKwArTgHYA4vvSI1OQKQUE7WhA7eycnjgq2hLjfYaWUNZbmw4LOX_zZEsFbiWB7qCWcazN_Tf9Hp1mbwFrDkrQLNrEobWV8kqjDsTmYRfwl_XojO7ORmxJI81rPY29pYlVMtHmtp6lEUZarHGDDtiplMmKNtpaT1ZG82qrBahbAhyzfIof8UNkVbsnA1hcnxGbJXlqqeKOhMOcZaEtcwygiCDP8wJQY2Ilyiak3_V5GAWk5nrfqwTvF33pxfIus7gvGwA2ZwF'
 
 const NAV_ITEMS: { id: PageId; icon: string; label: string }[] = [
-  { id: 'home',      icon: 'home',        label: 'Home'      },
-  { id: 'inventory', icon: 'inventory_2', label: 'Inventory' },
-  { id: 'analytics', icon: 'bar_chart',   label: 'Analytics' },
-  { id: 'profile',   icon: 'person',      label: 'Profile'   },
+  { id: 'home',         icon: 'home',         label: 'Home'         },
+  { id: 'inventory',    icon: 'inventory_2',  label: 'Inventory'    },
+  { id: 'transactions', icon: 'receipt_long', label: 'Transactions' },
+  { id: 'analytics',    icon: 'bar_chart',    label: 'Analytics'    },
+  { id: 'profile',      icon: 'person',       label: 'Profile'      },
 ]
 
 const PAGE_META: Record<PageId, { title: string; subtitle?: string }> = {
-  home:      { title: 'Ganesh Kirana Store' },
-  inventory: { title: 'Bahi-Khata AI',      subtitle: 'Inventory'       },
-  analytics: { title: 'Bahi-Khata AI',      subtitle: 'Analytics'       },
-  profile:   { title: 'Profile',            subtitle: 'Settings & Account' },
+  home:         { title: 'Ganesh Kirana Store' },
+  inventory:    { title: 'Inventory' },
+  transactions: { title: 'Transactions' },
+  analytics:    { title: 'Analytics' },
+  profile:      { title: 'Profile',            subtitle: 'Settings & Account' },
 }
 
 function getGreeting() {
@@ -26,6 +36,30 @@ function getGreeting() {
   if (h >= 12 && h < 17) return 'Good afternoon, Rajesh'
   return 'Good evening, Rajesh'
 }
+
+const getRelativeTime = (dateStr: string) => {
+  const now = new Date()
+  const d = new Date(dateStr)
+  const diffMs = now.getTime() - d.getTime()
+  if (diffMs < 0) return 'Just now'
+
+  const diffMins = Math.floor(diffMs / 60000)
+  if (diffMins < 1) return 'Just now'
+  if (diffMins < 60) return `${diffMins} min ago`
+
+  const diffHours = Math.floor(diffMins / 60)
+  if (diffHours < 24) {
+    if (now.getDate() === d.getDate()) {
+      return 'Today'
+    }
+    return 'Yesterday'
+  }
+
+  const diffDays = Math.floor(diffHours / 24)
+  if (diffDays === 1) return 'Yesterday'
+  return `${diffDays} days ago`
+}
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,14 +113,6 @@ function Sidebar({ currentPage, setPage }: { currentPage: PageId; setPage: (p: P
           )
         })}
       </nav>
-
-      {/* CTA */}
-      <div className="p-4 hairline-top">
-        <button className="w-full bg-brand-maroon text-white rounded-xl py-3 flex items-center justify-center gap-2 font-body-md font-semibold text-sm hover:bg-primary transition-colors active:scale-95 shadow-sm">
-          <span className="material-symbols-outlined text-[20px]">add</span>
-          Add Stock Entry
-        </button>
-      </div>
     </aside>
   )
 }
@@ -127,6 +153,51 @@ export default function Layout({ currentPage, setPage, children }: LayoutProps) 
   const meta     = PAGE_META[currentPage]
   const subtitle = currentPage === 'home' ? getGreeting() : meta.subtitle
   const showFab  = currentPage === 'home' || currentPage === 'inventory'
+
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => getNotifications())
+  const [isNotifOpen, setIsNotifOpen] = useState(false)
+  const prevOpenRef = useRef(false)
+
+  const unreadCount = notifications.filter((n) => !n.read).length
+
+  const syncNotifications = () => {
+    Promise.all([getProducts(), getTransactions()])
+      .then(([prodRes, transRes]) => {
+        syncWithBackend(prodRes.data, transRes.data)
+        setNotifications(getNotifications())
+      })
+      .catch((err) => {
+        console.error('Error syncing notifications:', err)
+      })
+  }
+
+  useEffect(() => {
+    syncNotifications()
+
+    const handleUpdate = () => {
+      setNotifications(getNotifications())
+    }
+    window.addEventListener('notifications-updated', handleUpdate)
+    return () => window.removeEventListener('notifications-updated', handleUpdate)
+  }, [currentPage])
+
+  useEffect(() => {
+    if (prevOpenRef.current && !isNotifOpen && notifications.length > 0) {
+      markAllAsRead()
+    }
+    prevOpenRef.current = isNotifOpen
+  }, [isNotifOpen, notifications])
+
+  useEffect(() => {
+    const clickOutside = (e: MouseEvent) => {
+      const wrapper = document.getElementById('notifications-wrapper')
+      if (wrapper && !wrapper.contains(e.target as Node)) {
+        setIsNotifOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', clickOutside)
+    return () => document.removeEventListener('mousedown', clickOutside)
+  }, [])
 
   // Mobile touch feedback
   useEffect(() => {
@@ -171,22 +242,72 @@ export default function Layout({ currentPage, setPage, children }: LayoutProps) 
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Search – visible md+ */}
-            <button className="hidden md:flex items-center gap-2 bg-surface-container rounded-full px-4 py-2 text-on-surface-variant font-body-sm text-sm hover:bg-surface-container-high transition-colors">
-              <span className="material-symbols-outlined text-[18px]">search</span>
-              <span className="hidden lg:inline">Search…</span>
-            </button>
+            <div className="relative" id="notifications-wrapper">
+              <button
+                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95 relative"
+              >
+                <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 bg-stock-red text-white text-[8px] font-bold h-3.5 w-3.5 rounded-full flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
 
-            {/* User initials badge (non-home pages) */}
-            {currentPage !== 'home' && (
-              <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-[10px] text-white font-bold select-none">
-                SP
-              </div>
-            )}
-
-            <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95">
-              <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
-            </button>
+              {isNotifOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-ledger-surface border border-bahi-hairline rounded-lg shadow-xl py-2 z-50 max-h-[400px] overflow-y-auto">
+                  <div className="px-4 py-2 border-b border-ledger-divider flex justify-between items-center">
+                    <span className="font-bold text-xs uppercase text-secondary tracking-wider">Notifications</span>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={markAllAsRead}
+                        className="text-[10px] font-bold text-stock-red hover:underline focus:outline-none uppercase tracking-wider"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  <div className="divide-y divide-ledger-divider">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-6 text-center text-secondary font-body-sm text-sm">
+                        No new notifications
+                      </div>
+                    ) : (
+                      notifications.map((notif) => {
+                        const relativeTime = getRelativeTime(new Date(notif.timestamp).toISOString())
+                        const iconColor = getNotifIconColor(notif.type)
+                        return (
+                          <div
+                            key={notif.id}
+                            className={`px-4 py-3 hover:bg-surface-container-high transition-colors flex items-start gap-3 ${
+                              notif.read ? 'opacity-60' : 'bg-primary-container/[0.03]'
+                            }`}
+                          >
+                            <span className={`material-symbols-outlined text-[20px] mt-0.5 ${iconColor} flex-shrink-0`}>
+                              {notif.icon}
+                            </span>
+                            <div className="flex-grow min-w-0">
+                              <div className="flex justify-between items-baseline gap-2">
+                                <h4 className="font-bold text-xs uppercase text-on-surface tracking-wide truncate">
+                                  {notif.title}
+                                </h4>
+                                <span className="font-body-sm text-[10px] text-outline flex-shrink-0">
+                                  {relativeTime}
+                                </span>
+                              </div>
+                              <p className="font-body-sm text-xs text-on-surface-variant mt-0.5 leading-normal">
+                                {notif.description}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

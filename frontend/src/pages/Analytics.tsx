@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import { getAnalyticsData } from '../services/analyticsService'
+import { LoadingCard } from '../components/SharedComponents'
+import type { AnalyticsData } from '../types'
 
 type ReportStatus = 'idle' | 'generating' | 'ready'
 
@@ -13,19 +15,39 @@ const formatSalesValue = (val: number) => {
   return `₹${val}`
 }
 
+interface SalesBar {
+  day: string
+  heightPx: number
+  value: string
+  isHighest: boolean
+}
+
+interface MappedCategory {
+  name: string
+  pct: number
+  colorClass: string
+}
+
+interface MappedFastMoving {
+  rank: string
+  name: string
+  units: string
+  revenue: string
+  status: 'low-stock' | 'in-stock'
+}
+
 export default function Analytics() {
   const [hoveredBar, setHoveredBar] = useState<number | null>(null)
   const [reportStatus, setReportStatus] = useState<ReportStatus>('idle')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<AnalyticsData | null>(null)
 
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/api/analytics`)
+    getAnalyticsData()
       .then((res) => {
-        if (res.data && res.data.success) {
-          setData(res.data.data)
+        if (res && res.success) {
+          setData(res.data)
         } else {
           setError(true)
         }
@@ -43,19 +65,11 @@ export default function Analytics() {
     setReportStatus('generating')
     setTimeout(() => {
       setReportStatus('ready')
-      setTimeout(() => setReportStatus('idle'), 2000)
-    }, 1500)
+    }, 2000)
   }
 
   if (loading) {
-    return (
-      <main className="flex-grow p-5 md:p-8 lg:p-10 pb-28 lg:pb-10 max-w-5xl mx-auto w-full flex items-center justify-center min-h-[50vh]">
-        <div className="ledger-card p-8 text-center rounded-lg w-full max-w-md">
-          <span className="material-symbols-outlined text-4xl text-outline mb-2 block animate-spin">sync</span>
-          <p className="font-body-md text-on-surface-variant">Loading analytics...</p>
-        </div>
-      </main>
-    )
+    return <LoadingCard message="Loading analytics..." fullPage={true} />
   }
 
   if (error || !data) {
@@ -71,18 +85,12 @@ export default function Analytics() {
 
   const { weeklySales, dailySales, categorySales, fastMovingItems } = data
 
-  // 1. Weekly sales calculations
-  const totalRevenueFormatted = `₹${(weeklySales?.totalRevenue || 0).toLocaleString('en-IN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`
-
-  const changePercentage = weeklySales?.changePercentage || 0
-  const changePercentageFormatted = `${changePercentage >= 0 ? '+' : ''}${changePercentage}% from last week`
+  // 1. Weekly sales change percentage sign
+  const salesChangeSign = weeklySales.changePercentage >= 0 ? '+' : ''
 
   // 2. Daily sales chart calculation
-  const maxSales = Math.max(...(dailySales || []).map((d: any) => d.sales), 0)
-  const salesBars = (dailySales || []).map((d: any) => {
+  const maxSales = Math.max(...(dailySales || []).map((d) => d.sales), 0)
+  const salesBars: SalesBar[] = (dailySales || []).map((d) => {
     const isHighest = maxSales > 0 && d.sales === maxSales
     const heightPx = maxSales > 0 ? (d.sales / maxSales) * 112 : 8
     return {
@@ -94,8 +102,8 @@ export default function Analytics() {
   })
 
   // 3. Category sales calculations
-  const totalCategoryRevenue = (categorySales || []).reduce((sum: number, c: any) => sum + c.revenue, 0)
-  const mappedCategories = (categorySales || []).map((c: any, idx: number) => {
+  const totalCategoryRevenue = (categorySales || []).reduce((sum: number, c) => sum + c.revenue, 0)
+  const mappedCategories: MappedCategory[] = (categorySales || []).map((c, idx: number) => {
     const pct = totalCategoryRevenue > 0 ? Math.round((c.revenue / totalCategoryRevenue) * 100) : 0
     return {
       name: c.category,
@@ -105,7 +113,7 @@ export default function Analytics() {
   })
 
   // 4. Fast moving items calculations
-  const mappedFastMoving = (fastMovingItems || []).map((item: any, idx: number) => ({
+  const mappedFastMoving: MappedFastMoving[] = (fastMovingItems || []).map((item, idx: number) => ({
     rank: String(idx + 1).padStart(2, '0'),
     name: item.name,
     units: `${item.quantitySold} units sold`,
@@ -115,42 +123,49 @@ export default function Analytics() {
 
   return (
     <main className="flex-grow p-5 md:p-8 lg:p-10 pb-28 lg:pb-10 space-y-6 md:space-y-8 max-w-5xl mx-auto w-full">
-      {/* ── Page title (desktop) ── */}
+      {/* Page title – desktop only */}
       <div className="hidden lg:block">
-        <h2 className="font-headline-lg text-2xl text-on-surface">Weekly Analytics</h2>
-        <p className="font-body-sm text-sm text-on-surface-variant mt-1">Performance overview — past 7 days</p>
+        <h2 className="font-headline-lg text-2xl text-on-surface">Analytics</h2>
+        <p className="font-body-sm text-sm text-on-surface-variant mt-1">Weekly performance and trends</p>
       </div>
 
-      {/* ── Summary Card ── */}
-      <section>
-        <div className="ledger-card p-5 rounded-lg">
-          <p className="font-body-sm text-secondary uppercase tracking-wider mb-1">Total Sales This Week</p>
-          <h2 className="font-number-display text-[36px] md:text-[40px] text-primary leading-tight">
-            {totalRevenueFormatted}
-          </h2>
-          <div className="flex items-center gap-2 mt-2 text-tertiary">
-            <span className="material-symbols-outlined text-sm">trending_up</span>
-            <span className="font-number-data text-body-sm">{changePercentageFormatted}</span>
+      {/* ── Two-column grid (desktop) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-start">
+        {/* Weekly Revenue & Chart */}
+        <section className="space-y-6">
+          {/* Weekly Sales Summary Card */}
+          <div className="bg-ledger-surface rounded-card border border-bahi-hairline p-5 shadow-sm">
+            <span className="font-body-sm text-xs uppercase tracking-wider text-on-surface-variant">
+              Weekly Revenue
+            </span>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="font-number-display text-3xl text-primary">
+                ₹{weeklySales.totalRevenue.toLocaleString('en-IN')}
+              </span>
+              <span
+                className={`font-number-data text-sm font-bold ${
+                  weeklySales.changePercentage >= 0 ? 'text-stock-green' : 'text-stock-red'
+                }`}
+              >
+                {salesChangeSign}
+                {weeklySales.changePercentage}%
+              </span>
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* ── Two-column: Chart + Categories (desktop) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 md:gap-8 items-start">
-        {/* Chart */}
-        <section>
-          <div className="ledger-card p-5 rounded-lg">
-            <div className="flex justify-between items-end mb-6">
+          {/* Daily Sales Chart */}
+          <div className="ledger-card p-5 rounded-lg space-y-6">
+            <div className="flex justify-between items-center">
               <div>
-                <h3 className="font-headline-sm text-on-surface">Daily Sales Trend</h3>
-                <p className="font-body-sm text-secondary">Past 7 days performance</p>
+                <h3 className="font-headline-sm text-on-surface">Daily Sales</h3>
+                <p className="font-body-sm text-secondary">Sales trends for last 7 days</p>
               </div>
               <span className="material-symbols-outlined text-secondary">calendar_month</span>
             </div>
 
             {/* Bar chart */}
             <div className="flex items-end justify-between gap-2" style={{ height: '140px' }}>
-              {salesBars.map((bar: any, idx: number) => (
+              {salesBars.map((bar: SalesBar, idx: number) => (
                 <div
                   key={bar.day}
                   className="flex flex-col items-center flex-1 gap-2 justify-end h-full cursor-pointer"
@@ -196,7 +211,7 @@ export default function Analytics() {
               {mappedCategories.length === 0 ? (
                 <p className="font-body-sm text-secondary">No category sales data available.</p>
               ) : (
-                mappedCategories.map((cat: any) => (
+                mappedCategories.map((cat: MappedCategory) => (
                   <div key={cat.name}>
                     <div className="flex justify-between mb-1.5">
                       <span className="font-body-md text-sm text-on-surface">{cat.name}</span>
@@ -230,7 +245,7 @@ export default function Analytics() {
                 No fast moving items found.
               </div>
             ) : (
-              mappedFastMoving.map((item: any) => (
+              mappedFastMoving.map((item: MappedFastMoving) => (
                 <div
                   key={item.rank}
                   className="flex items-center justify-between min-h-[56px] px-5 py-3 hover:bg-surface-container-low transition-colors"

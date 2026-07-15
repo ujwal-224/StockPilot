@@ -1,1 +1,1 @@
-export type PageId = 'home' | 'inventory' | 'analytics' | 'profile'
+export * from './types/index'
