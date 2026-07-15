@@ -1,26 +1,44 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import axios from 'axios'
 
-// ─── Data ────────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock'
 
 interface InventoryItem {
-  id: number
+  id: string
   name: string
   qty: string
   progressPct: number
   status: StockStatus
 }
 
-const ALL_ITEMS: InventoryItem[] = [
-  { id: 1, name: 'Basmati Rice (Premium)', qty: '142 kg',  progressPct: 75,  status: 'in-stock'     },
-  { id: 2, name: 'Mustard Oil (1L)',        qty: '12 units',progressPct: 25,  status: 'low-stock'    },
-  { id: 3, name: 'Toor Dal',               qty: '45 kg',   progressPct: 50,  status: 'in-stock'     },
-  { id: 4, name: 'Alphonso Mango Box',     qty: '0 units', progressPct: 0,   status: 'out-of-stock' },
-  { id: 5, name: 'Refined Sugar',          qty: '210 kg',  progressPct: 85,  status: 'in-stock'     },
-  { id: 6, name: 'Fortune Sunflower Oil',  qty: '38 units',progressPct: 40,  status: 'in-stock'     },
-  { id: 7, name: 'Aashirvaad Atta (5kg)', qty: '8 units', progressPct: 10,  status: 'low-stock'    },
-]
+// ─── Backend → UI mapper ──────────────────────────────────────────────────────
+
+interface BackendProduct {
+  _id: string
+  name: string
+  stock: number
+  unit: string
+  threshold: number
+}
+
+function mapProduct(p: BackendProduct): InventoryItem {
+  const status: StockStatus =
+    p.stock === 0
+      ? 'out-of-stock'
+      : p.stock <= p.threshold
+      ? 'low-stock'
+      : 'in-stock'
+
+  return {
+    id:          p._id,
+    name:        p.name,
+    qty:         `${p.stock} ${p.unit}`,
+    progressPct: Math.min((p.stock / (p.threshold * 2)) * 100, 100),
+    status,
+  }
+}
 
 type FilterId = 'all' | 'low-stock' | 'out-of-stock'
 
@@ -43,11 +61,28 @@ const STATUS_CONFIG: Record<StockStatus, {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Inventory() {
+  const [allItems,     setAllItems]     = useState<InventoryItem[]>([])
+  const [loading,      setLoading]      = useState(true)
+  const [error,        setError]        = useState(false)
   const [searchQuery,  setSearchQuery]  = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterId>('all')
 
+  // Fetch products from backend on mount
+  useEffect(() => {
+    axios
+      .get<{ success: boolean; data: BackendProduct[] }>(`${import.meta.env.VITE_API_URL}/api/products`)
+      .then((res) => {
+        setAllItems(res.data.data.map(mapProduct))
+        setLoading(false)
+      })
+      .catch(() => {
+        setError(true)
+        setLoading(false)
+      })
+  }, [])
+
   const filteredItems = useMemo(() =>
-    ALL_ITEMS.filter((item) => {
+    allItems.filter((item) => {
       const matchFilter =
         activeFilter === 'all' ||
         item.status === activeFilter
@@ -55,8 +90,12 @@ export default function Inventory() {
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
       return matchFilter && matchSearch
     }),
-    [activeFilter, searchQuery]
+    [allItems, activeFilter, searchQuery]
   )
+
+  // Derived counts for subtitle
+  const lowCount = allItems.filter((i) => i.status === 'low-stock').length
+  const outCount = allItems.filter((i) => i.status === 'out-of-stock').length
 
   return (
     <main className="flex-grow p-5 md:p-8 lg:p-10 pb-28 lg:pb-10 max-w-5xl mx-auto w-full space-y-5">
@@ -65,7 +104,7 @@ export default function Inventory() {
       <div className="hidden lg:block">
         <h2 className="font-headline-lg text-2xl text-on-surface">Live Inventory</h2>
         <p className="font-body-sm text-sm text-on-surface-variant mt-1">
-          {filteredItems.length} items · 2 low stock · 1 out of stock
+          {loading ? 'Loading…' : `${filteredItems.length} items · ${lowCount} low stock · ${outCount} out of stock`}
         </p>
       </div>
 
@@ -107,12 +146,32 @@ export default function Inventory() {
       <section className="space-y-3">
         <h3 className="font-headline-sm text-primary lg:hidden">Live Inventory</h3>
 
-        {filteredItems.length === 0 ? (
+        {/* Loading state */}
+        {loading && (
+          <div className="ledger-card p-8 text-center rounded-lg">
+            <span className="material-symbols-outlined text-4xl text-outline mb-2 block animate-spin">sync</span>
+            <p className="font-body-md text-on-surface-variant">Loading inventory...</p>
+          </div>
+        )}
+
+        {/* Error state */}
+        {!loading && error && (
+          <div className="ledger-card p-8 text-center rounded-lg">
+            <span className="material-symbols-outlined text-4xl text-stock-red mb-2 block">error_outline</span>
+            <p className="font-body-md text-stock-red">Unable to load inventory.</p>
+          </div>
+        )}
+
+        {/* Empty search result */}
+        {!loading && !error && filteredItems.length === 0 && (
           <div className="ledger-card p-8 text-center rounded-lg">
             <span className="material-symbols-outlined text-4xl text-outline mb-2 block">inventory_2</span>
             <p className="font-body-md text-on-surface-variant">No items match your search.</p>
           </div>
-        ) : (
+        )}
+
+        {/* Product cards */}
+        {!loading && !error && filteredItems.length > 0 && (
           /* Mobile: cards | Desktop: wider cards with more info */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
             {filteredItems.map((item) => {

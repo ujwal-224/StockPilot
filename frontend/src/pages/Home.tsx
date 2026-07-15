@@ -1,24 +1,43 @@
-// ─── Data ────────────────────────────────────────────────────────────────────
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 
-const needsAttentionItems = [
-  { id: 1, name: 'Fortune Sunflower Oil (1L)', units: '0 units',  progressPct: 0,  variant: 'danger'  as const },
-  { id: 2, name: 'Tata Salt (1kg)',            units: '12 units', progressPct: 15, variant: 'warning' as const },
-  { id: 3, name: 'Aashirvaad Atta (5kg)',      units: '8 units',  progressPct: 10, variant: 'warning' as const },
-  { id: 4, name: 'Maggi Noodles (Pack 12)',    units: '5 units',  progressPct: 8,  variant: 'warning' as const },
-]
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const recentActivity = [
-  {
-    id: 1, type: 'bill', label: 'Bill photo processed', time: '10m ago',
-    imgSrc: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDels1yOzCu7GS5EQ2irUhBSs27aKdIYCvAqJ1pd6ddu8ICiyq0NXn8Fi34BL6JHhn6So67pKvJ0Bh1caWzK7_jDWNSFzTuX3tatbTK0A6u50sW7xY2Qv4tGlVllMlTdOfz9tLygLCuK8Hq1mDkq7asMj5COng7Cob19jsA2k5a00srPubqaBP7zU-xVtsNQ5Ll4howHMvAazxFMRKdP0rWT5_xU-SS7JoXhoC8HmPkbMpViB1ZVEWQ8kAZOOOx7N9KPrGSUnZA1Ddn',
-  },
-  { id: 2, type: 'voice', label: 'Voice note: Added 10kg sugar',       time: '45m ago', icon: 'mic'  },
-  { id: 3, type: 'chat',  label: 'WhatsApp message: Updated oil price', time: '2h ago',  icon: 'chat' },
-]
+interface MappedAttentionItem {
+  id: string
+  name: string
+  units: string
+  progressPct: number
+  variant: 'danger' | 'warning'
+}
+
+interface MappedActivityItem {
+  id: string
+  type: string
+  label: string
+  time: string
+  icon: string
+}
+
+// ─── Time Helper ─────────────────────────────────────────────────────────────
+
+function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffMins < 1) return 'Just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  return `${diffDays}d ago`
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function NeedsAttentionRow({ item, isLast }: { item: (typeof needsAttentionItems)[0]; isLast: boolean }) {
+function NeedsAttentionRow({ item, isLast }: { item: MappedAttentionItem; isLast: boolean }) {
   const isDanger = item.variant === 'danger'
   return (
     <div className={`p-4 flex flex-col gap-2 ${isDanger ? 'margin-rule-red' : 'margin-rule-gold'} ${isLast ? '' : 'hairline-bottom'}`}>
@@ -38,14 +57,10 @@ function NeedsAttentionRow({ item, isLast }: { item: (typeof needsAttentionItems
   )
 }
 
-function ActivityRow({ item, isLast }: { item: (typeof recentActivity)[0]; isLast: boolean }) {
+function ActivityRow({ item, isLast }: { item: MappedActivityItem; isLast: boolean }) {
   return (
     <div className={`margin-rule-maroon p-4 flex items-center gap-4 ${isLast ? '' : 'hairline-bottom'} hover:bg-surface-container-low transition-colors cursor-pointer`}>
-      {item.type === 'bill' ? (
-        <div className="w-12 h-12 flex-shrink-0 bg-surface-container-high rounded-lg border border-outline-variant overflow-hidden">
-          <img src={item.imgSrc} alt="Bill thumbnail" className="w-full h-full object-cover opacity-80" />
-        </div>
-      ) : item.type === 'voice' ? (
+      {item.type === 'voice' ? (
         <div className="w-12 h-12 flex-shrink-0 bg-secondary-fixed rounded-lg flex items-center justify-center text-on-secondary-fixed-variant">
           <span className="material-symbols-outlined">{item.icon}</span>
         </div>
@@ -71,9 +86,103 @@ function ActivityRow({ item, isLast }: { item: (typeof recentActivity)[0]; isLas
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    lowStockCount: 0,
+    todayTransactions: 0,
+  })
+  const [attentionItems, setAttentionItems] = useState<MappedAttentionItem[]>([])
+  const [activityItems, setActivityItems] = useState<MappedActivityItem[]>([])
+
   const today = new Date().toLocaleDateString('en-IN', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
+
+  useEffect(() => {
+    axios
+      .get(`${import.meta.env.VITE_API_URL}/api/dashboard`)
+      .then((res) => {
+        const { totalProducts, lowStockCount, todayTransactions, lowStockProducts, recentTransactions } = res.data.data
+
+        setStats({
+          totalProducts,
+          lowStockCount,
+          todayTransactions,
+        })
+
+        // Map low stock products to attention rows
+        const mappedAttention = lowStockProducts.map((p: any) => ({
+          id: p._id,
+          name: p.name,
+          units: `${p.stock} ${p.unit}`,
+          progressPct: Math.min((p.stock / (p.threshold * 2)) * 100, 100),
+          variant: p.stock === 0 ? ('danger' as const) : ('warning' as const),
+        }))
+        setAttentionItems(mappedAttention)
+
+        // Map recent transactions to activity rows
+        const mappedActivity = recentTransactions.map((t: any) => {
+          const prodName = t.product ? t.product.name : 'Unknown Product'
+          const prodUnit = t.product ? t.product.unit : 'units'
+          let typeLabel = ''
+          let icon = 'history'
+          let rowType = 'voice'
+
+          if (t.type === 'SALE') {
+            typeLabel = 'Sold'
+            icon = 'trending_down'
+            rowType = 'voice'
+          } else if (t.type === 'PURCHASE') {
+            typeLabel = 'Purchased'
+            icon = 'trending_up'
+            rowType = 'chat'
+          } else if (t.type === 'ADJUSTMENT') {
+            typeLabel = 'Adjusted'
+            icon = 'sync_alt'
+            rowType = 'chat'
+          }
+
+          return {
+            id: t._id,
+            type: rowType,
+            label: `${typeLabel} ${t.quantity} ${prodUnit} of ${prodName}`,
+            time: formatRelativeTime(t.createdAt),
+            icon,
+          }
+        })
+        setActivityItems(mappedActivity)
+
+        setLoading(false)
+      })
+      .catch(() => {
+        setError(true)
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) {
+    return (
+      <main className="flex-grow p-5 md:p-8 lg:p-10 pb-28 lg:pb-10 max-w-5xl mx-auto w-full flex items-center justify-center min-h-[50vh]">
+        <div className="ledger-card p-8 text-center rounded-lg w-full max-w-md">
+          <span className="material-symbols-outlined text-4xl text-outline mb-2 block animate-spin">sync</span>
+          <p className="font-body-md text-on-surface-variant">Loading dashboard...</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main className="flex-grow p-5 md:p-8 lg:p-10 pb-28 lg:pb-10 max-w-5xl mx-auto w-full flex items-center justify-center min-h-[50vh]">
+        <div className="ledger-card p-8 text-center rounded-lg w-full max-w-md">
+          <span className="material-symbols-outlined text-4xl text-stock-red mb-2 block">error_outline</span>
+          <p className="font-body-md text-stock-red">Unable to load dashboard data.</p>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="flex-grow p-5 md:p-8 lg:p-10 pb-28 lg:pb-10 space-y-6 md:space-y-8 max-w-5xl mx-auto w-full">
@@ -89,21 +198,27 @@ export default function Home() {
           <span className="font-body-sm text-[11px] md:text-xs leading-tight text-on-surface-variant uppercase tracking-wider">
             Total Items
           </span>
-          <span className="font-number-display text-right text-primary text-xl md:text-2xl lg:text-3xl">1,248</span>
+          <span className="font-number-display text-right text-primary text-xl md:text-2xl lg:text-3xl">
+            {stats.totalProducts}
+          </span>
         </div>
 
         <div className="bg-brand-turmeric rounded-card border border-[#9c7118] margin-rule-gold p-3 md:p-5 flex flex-col justify-between h-24 md:h-28 lg:h-32">
           <span className="font-body-sm text-[11px] md:text-xs leading-tight text-white uppercase tracking-wider font-semibold">
             Low Stock
           </span>
-          <span className="font-number-display text-right text-white text-xl md:text-2xl lg:text-3xl">14</span>
+          <span className="font-number-display text-right text-white text-xl md:text-2xl lg:text-3xl">
+            {stats.lowStockCount}
+          </span>
         </div>
 
         <div className="bg-ledger-surface rounded-card hairline-border margin-rule-maroon p-3 md:p-5 flex flex-col justify-between h-24 md:h-28 lg:h-32">
           <span className="font-body-sm text-[11px] md:text-xs leading-tight text-on-surface-variant uppercase tracking-wider">
             Today's Updates
           </span>
-          <span className="font-number-display text-right text-primary text-xl md:text-2xl lg:text-3xl">28</span>
+          <span className="font-number-display text-right text-primary text-xl md:text-2xl lg:text-3xl">
+            {stats.todayTransactions}
+          </span>
         </div>
       </section>
 
@@ -118,9 +233,16 @@ export default function Home() {
             </button>
           </div>
           <div className="bg-ledger-surface rounded-card hairline-border overflow-hidden">
-            {needsAttentionItems.map((item, idx) => (
-              <NeedsAttentionRow key={item.id} item={item} isLast={idx === needsAttentionItems.length - 1} />
-            ))}
+            {attentionItems.length === 0 ? (
+              <div className="p-8 text-center">
+                <span className="material-symbols-outlined text-4xl text-outline mb-2 block">check_circle</span>
+                <p className="font-body-md text-on-surface-variant">All items are sufficiently stocked.</p>
+              </div>
+            ) : (
+              attentionItems.map((item, idx) => (
+                <NeedsAttentionRow key={item.id} item={item} isLast={idx === attentionItems.length - 1} />
+              ))
+            )}
           </div>
         </section>
 
@@ -133,9 +255,16 @@ export default function Home() {
             </button>
           </div>
           <div className="bg-ledger-surface rounded-card hairline-border overflow-hidden">
-            {recentActivity.map((item, idx) => (
-              <ActivityRow key={item.id} item={item} isLast={idx === recentActivity.length - 1} />
-            ))}
+            {activityItems.length === 0 ? (
+              <div className="p-8 text-center">
+                <span className="material-symbols-outlined text-4xl text-outline mb-2 block">history</span>
+                <p className="font-body-md text-on-surface-variant">No recent transactions recorded.</p>
+              </div>
+            ) : (
+              activityItems.map((item, idx) => (
+                <ActivityRow key={item.id} item={item} isLast={idx === activityItems.length - 1} />
+              ))
+            )}
           </div>
         </section>
       </div>
