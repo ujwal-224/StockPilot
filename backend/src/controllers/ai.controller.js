@@ -142,3 +142,126 @@ export const chat = async (req, res, next) => {
     return next(error);
   }
 };
+
+const insightsSystemPrompt = `You are StockPilot AI.
+
+Analyze the inventory and generate concise business insights.
+
+Focus on:
+
+- Low stock products
+- Out of stock products
+- Restocking priorities
+- Overall inventory health
+- Important observations
+
+Return ONLY a JSON array of short insights.
+
+Example:
+
+[
+  "Brown Rice stock is critically low.",
+  "Amul Milk should be reordered this week.",
+  "Inventory contains 5 products.",
+  "No products are out of stock."
+]
+
+Do not include explanations.
+
+Do not use markdown.`;
+
+function buildFallbackInsights(products) {
+  const outOfStock = products.filter((product) => product.stock === 0);
+  const lowStock = products.filter(
+    (product) => product.stock > 0 && product.stock <= product.threshold
+  );
+
+  const insights = [`Inventory contains ${products.length} products.`];
+
+  insights.push(
+    outOfStock.length > 0
+      ? `${outOfStock.length} product${outOfStock.length === 1 ? " is" : "s are"} out of stock.`
+      : "No products are out of stock."
+  );
+
+  insights.push(
+    lowStock.length > 0
+      ? `${lowStock.length} product${lowStock.length === 1 ? " needs" : "s need"} restocking soon.`
+      : "No products are currently below their stock threshold."
+  );
+
+  if (outOfStock[0] || lowStock[0]) {
+    insights.push(`${(outOfStock[0] || lowStock[0]).name} should be prioritized for restocking.`);
+  } else {
+    insights.push("Overall inventory health is good.");
+  }
+
+  return insights;
+}
+
+function parseInsights(content, fallback) {
+  if (typeof content !== "string") return fallback;
+
+  try {
+    const arrayStart = content.indexOf("[");
+    const arrayEnd = content.lastIndexOf("]");
+
+    if (arrayStart === -1 || arrayEnd === -1 || arrayEnd < arrayStart) {
+      return fallback;
+    }
+
+    const parsed = JSON.parse(content.slice(arrayStart, arrayEnd + 1));
+    const insights = Array.isArray(parsed)
+      ? parsed.filter((insight) => typeof insight === "string" && insight.trim())
+      : [];
+
+    return insights.length > 0 ? insights : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export const getInsights = async (req, res, next) => {
+  try {
+    const apiKey = process.env.GROQ_API_KEY;
+    const model = process.env.GROQ_MODEL;
+
+    if (!apiKey || !model) {
+      return res.status(500).json({
+        success: false,
+        message: "Groq AI is not configured",
+      });
+    }
+
+    const products = await Product.find(
+      {},
+      "name stock threshold category unit price"
+    ).lean();
+    const inventorySummary = buildInventorySummary(products);
+    const fallbackInsights = buildFallbackInsights(products);
+
+    const groq = new Groq({ apiKey });
+    const completion = await groq.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: insightsSystemPrompt },
+        {
+          role: "user",
+          content: `Analyze this inventory:\n\n${inventorySummary}`,
+        },
+      ],
+    });
+
+    const insights = parseInsights(
+      completion.choices[0]?.message?.content,
+      fallbackInsights
+    );
+
+    return res.status(200).json({
+      success: true,
+      insights,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};

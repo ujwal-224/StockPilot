@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getDashboardData } from '../services/dashboardService'
 import { SummaryCard, LoadingCard } from '../components/SharedComponents'
 import { getNotifications, getNotifIconColor } from '../services/notificationService'
+import { getAIInsights } from '../services/aiInsightsService'
 import type { BackendProduct, AppNotification } from '../types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -76,6 +77,58 @@ function ActivityRow({ item, isLast }: { item: AppNotification; isLast: boolean 
   )
 }
 
+function AIInsightsCard({
+  insights,
+  loading,
+  error,
+  onRefresh,
+}: {
+  insights: string[]
+  loading: boolean
+  error: boolean
+  onRefresh: () => void
+}) {
+  return (
+    <section className="bg-ledger-surface rounded-card hairline-border bahi-spine p-5 md:p-6">
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <h2 className="font-headline-md text-lg md:text-xl text-on-surface">🧠 AI Insights</h2>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          aria-label="Refresh AI insights"
+          className="inline-flex items-center gap-1.5 text-primary font-body-sm text-sm font-semibold hover:text-primary-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span className={`material-symbols-outlined text-lg ${loading ? 'animate-spin' : ''}`}>refresh</span>
+          <span className="hidden sm:inline">Refresh</span>
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="space-y-3" aria-label="Loading AI insights">
+          {[85, 72, 90, 65].map((width, index) => (
+            <div key={index} className="flex items-center gap-3 animate-pulse">
+              <div className="w-2 h-2 rounded-full bg-outline/40 flex-shrink-0" />
+              <div className="h-4 rounded bg-surface-container-high" style={{ width: `${width}%` }} />
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <p className="font-body-md text-sm text-error">Unable to generate AI insights.</p>
+      ) : (
+        <ul className="space-y-3">
+          {insights.slice(0, 4).map((insight, index) => (
+            <li key={`${insight}-${index}`} className="flex items-start gap-3 font-body-md text-sm md:text-base text-on-surface-variant">
+              <span className="text-brand-turmeric font-bold" aria-hidden="true">•</span>
+              <span>{insight}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -88,6 +141,9 @@ export default function Home() {
   })
   const [attentionItems, setAttentionItems] = useState<MappedAttentionItem[]>([])
   const [activities, setActivities] = useState<AppNotification[]>([])
+  const [insights, setInsights] = useState<string[]>([])
+  const [insightsLoading, setInsightsLoading] = useState(true)
+  const [insightsError, setInsightsError] = useState(false)
 
   const today = new Date().toLocaleDateString('en-IN', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -119,6 +175,29 @@ export default function Home() {
         setError(true)
         setLoading(false)
       })
+  }, [])
+
+  const loadInsights = () => {
+    setInsightsLoading(true)
+    setInsightsError(false)
+
+    getAIInsights()
+      .then(setInsights)
+      .catch(() => {
+        setInsights([])
+        setInsightsError(true)
+      })
+      .finally(() => setInsightsLoading(false))
+  }
+
+  useEffect(() => {
+    getAIInsights()
+      .then(setInsights)
+      .catch(() => {
+        setInsights([])
+        setInsightsError(true)
+      })
+      .finally(() => setInsightsLoading(false))
   }, [])
 
   useEffect(() => {
@@ -175,6 +254,13 @@ export default function Home() {
           icon="update"
         />
       </section>
+
+      <AIInsightsCard
+        insights={insights}
+        loading={insightsLoading}
+        error={insightsError}
+        onRefresh={loadInsights}
+      />
 
       {/* ── Two-column grid (desktop) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-start">
