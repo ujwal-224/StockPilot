@@ -1,6 +1,6 @@
 # StockPilot
 
-Welcome to StockPilot - A stock market analysis and trading platform.
+Welcome to **StockPilot** — A modern inventory & analytics dashboard for Indian kirana store owners, inspired by the traditional Bahi-Khata ledger aesthetic.
 
 ## Features
 
@@ -10,4 +10,4 @@ Welcome to StockPilot - A stock market analysis and trading platform.
 
 ## Getting Started
 
-For development and setup instructions, see [README.md](../README.md)
+For development and setup instructions, see [README.md](https://github.com/ujwal-224/StockPilot/blob/main/README.md)
