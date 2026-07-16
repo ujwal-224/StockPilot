@@ -260,7 +260,13 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    loadInsights()
+    getAIInsights()
+      .then(setInsights)
+      .catch(() => {
+        setInsights([])
+        setInsightsError(true)
+      })
+      .finally(() => setInsightsLoading(false))
   }, [])
 
   useEffect(() => {

@@ -5,6 +5,7 @@ import { createTransaction } from '../services/transactionService'
 import type { StockStatus, InventoryItem, BackendProduct } from '../types'
 import { LoadingCard, EmptyState } from '../components/SharedComponents'
 import { addNotification } from '../services/notificationService'
+import { useAuth } from '../context/AuthContext'
 
 // ─── Backend → UI mapper ──────────────────────────────────────────────────────
 
@@ -52,6 +53,9 @@ const STATUS_CONFIG: Record<StockStatus, {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Inventory() {
+  const { session } = useAuth()
+  const canManageProducts = session?.membership.role === 'OWNER' || session?.membership.role === 'MANAGER'
+  const canDeleteProducts = session?.membership.role === 'OWNER'
   const [allItems,     setAllItems]     = useState<InventoryItem[]>([])
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState(false)
@@ -400,12 +404,11 @@ export default function Inventory() {
           >
             <span className="material-symbols-outlined text-[18px]">swap_horiz</span> Record Transaction
           </button>
-          <button
-            onClick={openModal}
-            className="bg-primary text-white px-4 py-2 font-body-sm text-sm font-semibold rounded-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-1.5"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span> Add Product
-          </button>
+          {canManageProducts && (
+            <button onClick={openModal} className="bg-primary text-white px-4 py-2 font-body-sm text-sm font-semibold rounded-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[18px]">add</span> Add Product
+            </button>
+          )}
         </div>
       </div>
 
@@ -454,12 +457,11 @@ export default function Inventory() {
             >
               <span className="material-symbols-outlined text-[14px]">swap_horiz</span> Record
             </button>
-            <button
-              onClick={openModal}
-              className="bg-primary text-white px-2.5 py-1.5 font-body-sm text-[11px] font-semibold rounded-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-1"
-            >
-              <span className="material-symbols-outlined text-[14px]">add</span> Add Product
-            </button>
+            {canManageProducts && (
+              <button onClick={openModal} className="bg-primary text-white px-2.5 py-1.5 font-body-sm text-[11px] font-semibold rounded-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">add</span> Add Product
+              </button>
+            )}
           </div>
         </div>
 
@@ -519,18 +521,16 @@ export default function Inventory() {
                           {cfg.label}
                         </span>
                       </div>
-                      <button
-                        onClick={(e) => openEditModal(item, e)}
-                        className="text-secondary hover:text-primary transition-colors p-1"
-                      >
-                        <span className="material-symbols-outlined text-lg">edit</span>
-                      </button>
-                      <button
-                        onClick={(e) => handleDelete(item.id, e)}
-                        className="text-secondary hover:text-stock-red transition-colors p-1"
-                      >
-                        <span className="material-symbols-outlined text-lg">delete</span>
-                      </button>
+                      {canManageProducts && (
+                        <button onClick={(e) => openEditModal(item, e)} className="text-secondary hover:text-primary transition-colors p-1">
+                          <span className="material-symbols-outlined text-lg">edit</span>
+                        </button>
+                      )}
+                      {canDeleteProducts && (
+                        <button onClick={(e) => handleDelete(item.id, e)} className="text-secondary hover:text-stock-red transition-colors p-1">
+                          <span className="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

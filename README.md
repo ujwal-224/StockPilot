@@ -96,7 +96,10 @@ Ensure you have **Node.js (v18+)** and **npm (v9+)** installed.
    ```env
    PORT=5000
    MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/StockPilot
-   GEMINI_API_KEY=your_gemini_api_key_here
+   GROQ_API_KEY=your_groq_api_key_here
+   GROQ_MODEL=your_groq_model
+   JWT_SECRET=replace_with_a_long_random_secret
+   JWT_EXPIRES_IN=7d
    ```
 4. Start the backend development server:
    ```bash

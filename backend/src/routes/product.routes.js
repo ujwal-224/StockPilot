@@ -7,11 +7,13 @@ import {
   updateProduct,
   deleteProduct,
 } from '../controllers/product.controller.js';
+import { authenticate, allowRoles } from '../middleware/auth.middleware.js';
 
 const router = Router();
+router.use(authenticate);
 
 // POST /api/products        → Create a new product
-router.post('/', createProduct);
+router.post('/', allowRoles('OWNER', 'MANAGER'), createProduct);
 
 // GET  /api/products        → Get all products
 router.get('/', getAllProducts);
@@ -23,9 +25,9 @@ router.get('/low-stock', getLowStockProducts);
 router.get('/:id', getProductById);
 
 // PUT  /api/products/:id    → Update product
-router.put('/:id', updateProduct);
+router.put('/:id', allowRoles('OWNER', 'MANAGER'), updateProduct);
 
 // DELETE /api/products/:id  → Delete product
-router.delete('/:id', deleteProduct);
+router.delete('/:id', allowRoles('OWNER'), deleteProduct);
 
 export default router;
