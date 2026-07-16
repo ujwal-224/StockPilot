@@ -59,11 +59,27 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
 export function AuthInput({ label, value, onChange, ...props }: {
   label: string; value: string; onChange: (value: string) => void; type?: string; autoComplete?: string
 }) {
+  const [showPassword, setShowPassword] = useState(false)
+  const isPassword = props.type === 'password'
+
   return (
     <label className="block">
       <span className="block text-sm font-semibold text-on-surface mb-1.5">{label}</span>
-      <input {...props} required value={value} onChange={(event) => onChange(event.target.value)}
-        className="w-full h-12 px-3 rounded-lg bg-surface-container-low border border-outline-variant focus:border-primary focus:outline-none" />
+      <div className="relative">
+        <input {...props} type={isPassword && showPassword ? 'text' : props.type} required value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className={`w-full h-12 px-3 rounded-lg bg-surface-container-low border border-outline-variant focus:border-primary focus:outline-none ${isPassword ? 'pr-12' : ''}`} />
+        {isPassword && (
+          <button type="button" onClick={() => setShowPassword((visible) => !visible)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-pressed={showPassword}
+            className="absolute inset-y-0 right-0 w-12 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+            <span className="material-symbols-outlined text-xl" aria-hidden="true">
+              {showPassword ? 'visibility_off' : 'visibility'}
+            </span>
+          </button>
+        )}
+      </div>
     </label>
   )
 }
