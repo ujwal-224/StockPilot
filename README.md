@@ -1,39 +1,45 @@
-# StockPilot — Kirana Ledger Dashboard
+# StockPilot — Kirana Ledger & Analytics Dashboard
 
-> A modern, responsive inventory & analytics dashboard built for Indian kirana store owners. Inspired by the traditional **Bahi-Khata** ledger aesthetic — warm paper tones, maroon spine accents, and IBM Plex typography.
+> A modern, responsive inventory management & predictive analytics dashboard built for Indian kirana store owners. StockPilot blends the warm, traditional aesthetic of the **Bahi-Khata** paper ledger (featuring warm parchment tones, maroon spine accents, and monospace numerical alignment) with cutting-edge technology like Node.js, MongoDB, and Gemini AI.
 
-![StockPilot](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
-![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite)
-![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript)
-![TailwindCSS](https://img.shields.io/badge/Tailwind-3-06B6D4?style=flat-square&logo=tailwindcss)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite)](https://vite.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-3-06B6D4?style=flat-square&logo=tailwindcss)](https://tailwindcss.com)
+[![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=flat-square&logo=node.js)](https://nodejs.org)
+[![Express](https://img.shields.io/badge/Express-4-000000?style=flat-square&logo=express)](https://expressjs.com)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248?style=flat-square&logo=mongodb)](https://www.mongodb.com)
 
 ---
 
-## ✨ Features
+## ✨ Features & Architecture
 
-| Page | What's inside |
-|---|---|
-| 🏠 **Home** | Stat cards (Total Items, Low Stock, Today's Updates), Needs Attention list with progress bars, Recent Activity feed |
-| 📦 **Inventory** | Live search, filter pills (All / Low Stock / Out of Stock), color-coded stock cards with spine accents |
-| 📊 **Analytics** | Weekly sales summary, interactive bar chart with hover tooltips, Fast Moving Items, Category breakdown, animated Report generator |
-| 👤 **Profile** | Store info card, settings menu, notification toggles, logout |
+StockPilot is structured as a decoupled monorepo containing a **React Frontend Client** and a **Node.js Express Backend API**.
 
-### Responsive breakpoints
-
-- **Mobile** — Bottom navigation bar + floating action button
-- **Tablet (`md`)** — Wider layout, search bar in header
-- **Desktop (`lg`)** — Fixed left sidebar with nav links, two-column content grid
+| Section | What's Inside | Responsive Features |
+|---|---|---|
+| 🏠 **Home Dashboard** | High-level KPI cards (Total Items, Low Stock, Today's Updates), items needing immediate restocking, and recent ledger activities. | Summary grid stacks on mobile; touch-friendly cards for high visual priority. |
+| 📦 **Live Inventory** | Search bar and status pill filters (`All`, `Low Stock`, `Out of Stock`). In-app modals to **Add**, **Edit**, or **Delete** products. | Cards automatically scale down and progress bars adapt dynamically to 320px+ viewports. Modals feature premium blurred, dimmed overlays. |
+| 💸 **Transactions Ledger** | Logging system to record sales, stock adjustments, and wholesale purchases. | Displays as a detailed data table on desktop, and transforms into clean vertical ledger slip-cards on mobile devices. |
+| 📊 **Gemini Analytics** | Weekly revenue chart, category breakdown, fast-moving items, and custom PDF weekly reports. | Dynamic SVG bar chart with hover tooltips adapts seamlessly to container widths. |
+| 👤 **Store Profile** | Digital merchant settings, business hours configuration, and active WhatsApp integrations. | Stacks elements into a beautiful, linear layout on smaller screens. |
 
 ---
 
 ## 🛠 Tech Stack
 
-- **React 19** + **TypeScript 6**
-- **Vite 8** (dev server + bundler)
-- **Tailwind CSS 3** (custom design tokens — Bahi-Khata color palette)
-- **IBM Plex Sans / Mono** + **Zilla Slab** (Google Fonts)
-- **Material Symbols Outlined** (Google Icons)
-- State-based routing (no router library needed)
+### Frontend Client
+* **React 19** & **TypeScript 6**
+* **Vite 8** (Ultra-fast HMR Dev Server + Rollup Bundler)
+* **Tailwind CSS 3** (Custom design tokens configuring the traditional Bahi-Khata palette)
+* **React Hot Toast** (Premium notification toasts)
+* State-based local routing (eliminating heavy external dependencies)
+
+### Backend API
+* **Node.js (ES Modules)** & **Express 4**
+* **MongoDB Atlas & Mongoose** (NoSQL schema-based database)
+* **Gemini API** integration (for predictive stock analytics and smart reporting)
+* **Cors** & **Dotenv** configuration
 
 ---
 
@@ -41,22 +47,30 @@
 
 ```
 StockPilot/
-└── frontend/
-    ├── index.html                  # Entry HTML — loads Google Fonts & Material Symbols
-    ├── tailwind.config.js          # Full design token system (colors, fonts, spacing)
-    ├── vite.config.ts
-    └── src/
-        ├── main.tsx                # React root
-        ├── App.tsx                 # State-based page router
-        ├── index.css               # Tailwind directives + custom utilities
-        ├── types.ts                # Shared TypeScript types (PageId)
-        ├── components/
-        │   └── Layout.tsx          # Sidebar (desktop) + Header + Bottom Nav + FAB
-        └── pages/
-            ├── Home.tsx            # Dashboard overview
-            ├── Inventory.tsx       # Live inventory with search & filters
-            ├── Analytics.tsx       # Sales charts and reports
-            └── Profile.tsx         # Store profile and settings
+├── backend/                       # Express Node.js Server
+│   ├── src/
+│   │   ├── config/database.js     # MongoDB connection setup
+│   │   ├── controllers/           # API request controllers (Product, Analytics)
+│   │   ├── middleware/            # Error handling & CORS middlewares
+│   │   ├── models/                # Mongoose Database Schemas
+│   │   ├── routes/                # API Endpoints (Products, Transactions)
+│   │   └── server.js              # Application entry point
+│   ├── .env.example
+│   └── package.json
+│
+└── frontend/                      # React Vite Client
+    ├── public/                    # Assets & Brand Logos
+    ├── src/
+    │   ├── components/
+    │   │   ├── Layout.tsx         # Responsive Sidebar, Header, & Bottom Nav Shell
+    │   │   └── SharedComponents.tsx # Cards, badges, loading, search bar
+    │   ├── pages/                 # Home, Inventory, Transactions, Analytics, Profile
+    │   ├── services/              # API Client fetch calls (Axios)
+    │   ├── types.ts               # Shared TypeScript schemas
+    │   ├── index.css              # Custom parchment typography & accent lines
+    │   └── App.tsx                # Page switching state router
+    ├── tailwind.config.js         # Material Design 3 theme extensions
+    └── package.json
 ```
 
 ---
@@ -64,128 +78,99 @@ StockPilot/
 ## 🚀 Getting Started (Local Setup)
 
 ### Prerequisites
-
-Make sure you have the following installed on your machine:
-
-| Tool | Version | Download |
-|---|---|---|
-| **Node.js** | v18 or higher | [nodejs.org](https://nodejs.org) |
-| **npm** | v9 or higher | Comes with Node.js |
-| **Git** | any | [git-scm.com](https://git-scm.com) |
-
-Verify your versions:
-```bash
-node -v    # should print v18.x.x or higher
-npm -v     # should print 9.x.x or higher
-git --version
-```
+Ensure you have **Node.js (v18+)** and **npm (v9+)** installed.
 
 ---
 
-### Step 1 — Clone the repository
+### Step 1: Set Up the Backend API
 
-```bash
-git clone https://github.com/ujwal-224/StockPilot.git
-```
-
-### Step 2 — Navigate into the frontend folder
-
-```bash
-cd StockPilot/frontend
-```
-
-### Step 3 — Install dependencies
-
-```bash
-npm install
-```
-
-> This installs React, Vite, TypeScript, Tailwind CSS, and all dev dependencies listed in `package.json`.
-
-### Step 4 — Start the development server
-
-```bash
-npm run dev
-```
-
-You should see output like:
-
-```
-  VITE v8.x.x  ready in 300ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-```
-
-### Step 5 — Open in your browser
-
-Visit **[http://localhost:5173](http://localhost:5173)** 🎉
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file in the `backend` folder based on `.env.example`:
+   ```env
+   PORT=5000
+   MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/StockPilot
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+4. Start the backend development server:
+   ```bash
+   npm run dev
+   ```
+   The API will boot on **[http://localhost:5000](http://localhost:5000)**.
+   * *Verify by visiting [http://localhost:5000/](http://localhost:5000/) in your browser. You should receive a `"StockPilot Backend Running"` JSON response.*
 
 ---
 
-## 🧱 Available Scripts
+### Step 2: Set Up the Frontend Client
 
-Run these from inside the `frontend/` directory:
-
-```bash
-# Start local dev server with hot-reload
-npm run dev
-
-# Type-check TypeScript without building
-npx tsc --noEmit
-
-# Build optimized production bundle
-npm run build
-
-# Preview the production build locally
-npm run preview
-
-# Run ESLint
-npm run lint
-```
-
----
-
-## 🎨 Design System
-
-The app uses a custom Tailwind design token system defined in `tailwind.config.js`.
-
-### Key color tokens
-
-| Token | Hex | Usage |
-|---|---|---|
-| `brand-maroon` / `primary` | `#51141a` | Primary actions, headings, active nav |
-| `brand-turmeric` | `#BD8A1E` | Low stock warnings |
-| `ledger-surface` | `#F4F2EC` | Card backgrounds |
-| `ledger-paper` | `#E7E4DC` | Page background (warm parchment) |
-| `stock-green` | `#2D5A27` | In-stock indicators |
-| `stock-red` | `#B33B2E` | Out-of-stock indicators |
-| `ink-blue` | `#3B5166` | Chart bars (Analytics) |
-
-### Typography
-
-| Class | Font | Usage |
-|---|---|---|
-| `font-headline-*` | Zilla Slab | Section titles, page headings |
-| `font-body-*` | IBM Plex Sans | Body text, labels |
-| `font-number-*` | IBM Plex Mono | Prices, quantities, data values |
+1. Open a new terminal tab and navigate to the frontend directory:
+   ```bash
+   cd ../frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file in the `frontend` folder:
+   ```env
+   VITE_API_URL=http://localhost:5000
+   ```
+4. Start the frontend client:
+   ```bash
+   npm run dev
+   ```
+5. Open **[http://localhost:5173](http://localhost:5173)** in your browser 🎉
 
 ---
 
-## 🤝 Contributing
+## ☁️ Deployment Instructions
 
-1. Fork the repo
-2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Commit your changes: `git commit -m "feat: add your feature"`
-4. Push to your branch: `git push origin feat/your-feature`
-5. Open a Pull Request
+### 1. Deploy the Backend (on [Render.com](https://render.com))
+1. Log in to Render and create a new **Web Service**.
+2. Link your GitHub Repository.
+3. Configure these subdirectory details:
+   * **Root Directory**: `backend` (very important)
+   * **Runtime**: `Node`
+   * **Build Command**: `npm install`
+   * **Start Command**: `npm start`
+4. Add the following **Environment Variables** in the settings tab:
+   * `MONGO_URI` (your MongoDB connection string)
+   * `GEMINI_API_KEY` (your Gemini key)
+   * `PORT` = `5000` (Render allocates this dynamically, but setting it matches internal configs)
+5. Deploy. You will receive a public API URL (e.g. `https://stockpilot-api.onrender.com`).
+
+### 2. Deploy the Frontend (on [Vercel.com](https://vercel.com))
+1. Log in to Vercel and **Add New Project**.
+2. Link your GitHub Repository.
+3. Configure these directory settings:
+   * **Framework Preset**: `Vite`
+   * **Root Directory**: `frontend` (very important)
+   * **Build Command**: `npm run build`
+   * **Output Directory**: `dist`
+4. Expand **Environment Variables** and add:
+   * **Key**: `VITE_API_URL`
+   * **Value**: `https://stockpilot-api.onrender.com` (your live Render API URL, without a trailing slash)
+5. Click **Deploy**. Vercel will host your static React build and hook it directly to your live backend.
 
 ---
 
-## 📄 License
+## 🧱 Production Build Scripts
 
-This project is open source and available under the [MIT License](LICENSE).
+### Backend
+* `npm start`: Starts the production server.
+* `npm run dev`: Starts Node server with nodemon file watching.
+
+### Frontend
+* `npm run build`: Type-checks TypeScript files and compiles the minified production assets into `dist/`.
+* `npm run preview`: Hosts the built `dist/` folder locally to test production builds before deploying.
+* `npm run lint`: Performs static analysis lint checks.
 
 ---
 
-<p align="center">Built with ❤️ for kirana store owners across India</p>
+<p align="center">Built with ❤️ for kirana store owners across India during the Hackathon</p>
