@@ -74,17 +74,35 @@ interface LayoutProps {
 function Sidebar({ currentPage, setPage }: { currentPage: PageId; setPage: (p: PageId) => void }) {
   return (
     <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-64 bg-ledger-surface border-r border-ledger-hairline z-50">
-      {/* Brand */}
-      <div className="p-6 hairline-bottom flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full overflow-hidden bg-primary-fixed border border-outline-variant flex-shrink-0">
-          <img className="w-full h-full object-cover" src={OWNER_AVATAR} alt="Store owner" />
-        </div>
-        <div className="min-w-0">
-          <p className="font-headline-sm text-sm text-primary font-semibold leading-tight truncate">
-            Ganesh Kirana
-          </p>
-          <p className="font-body-sm text-xs text-on-surface-variant truncate">Store Dashboard</p>
-        </div>
+      {/* Brand – stacked: icon on top, wordmark below */}
+      <div className="px-4 py-4 hairline-bottom flex flex-col items-center gap-2">
+        {/* Icon-only crop: original logo is 1024×1024, icon lives in left ~27% horizontally, centered vertically.
+            At backgroundSize 330%, a 72px div → image renders at ~237px.
+            Icon spans 0–64px of that → left-aligned with a tiny left offset. */}
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            backgroundImage: 'url(/stockpilot-logo.png)',
+            backgroundSize: '410% auto',
+            backgroundPosition: '5% 50%',
+            backgroundRepeat: 'no-repeat',
+          }}
+          aria-hidden="true"
+        />
+        {/* Wordmark – exact brand maroon from logo */}
+        <span
+          style={{
+            color: '#7B1D2A',
+            fontFamily: 'Georgia, serif',
+            fontWeight: 700,
+            fontSize: 15,
+            letterSpacing: '0.02em',
+            lineHeight: 1,
+          }}
+        >
+          StockPilot
+        </span>
       </div>
 
       {/* Nav links */}
@@ -221,17 +239,13 @@ export default function Layout({ currentPage, setPage, children }: LayoutProps) 
         {/* Header */}
         <header className="sticky top-0 z-40 bg-ledger-surface hairline-bottom flex justify-between items-center h-row-height-min px-5 md:px-8 lg:px-10">
           <div className="flex items-center gap-3">
-            {/* Mobile: avatar on Home, menu icon on other pages */}
-            {currentPage === 'home' ? (
-              <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-fixed border border-outline-variant lg:hidden">
-                <img className="w-full h-full object-cover" src={OWNER_AVATAR} alt="Store owner" />
-              </div>
-            ) : (
-              <button className="lg:hidden w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors">
-                <span className="material-symbols-outlined text-primary">menu</span>
-              </button>
-            )}
-            <div>
+            {/* Mobile header: full original horizontal logo */}
+            <img
+              src="/stockpilot-logo.png"
+              alt="StockPilot"
+              className="h-9 w-auto object-contain lg:hidden"
+            />
+            <div className="hidden lg:block">
               <h1 className="font-headline-sm text-base md:text-lg text-primary leading-tight">
                 {meta.title}
               </h1>
