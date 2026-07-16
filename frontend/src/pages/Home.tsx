@@ -155,7 +155,7 @@ export default function Home() {
       </div>
 
       {/* ── Stat Row ── */}
-      <section className="grid grid-cols-3 gap-3 md:gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         <SummaryCard
           title="Total Items"
           value={stats.totalProducts}

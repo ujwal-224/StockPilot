@@ -100,7 +100,7 @@ export default function Transactions() {
       </div>
 
       {/* ── Summary Cards ── */}
-      <section className="grid grid-cols-3 gap-3 md:gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         <SummaryCard
           title="Total Sales"
           value={salesCount}
@@ -152,48 +152,91 @@ export default function Transactions() {
           message="No transaction records found."
         />
       ) : (
-        <div className="overflow-x-auto border border-bahi-hairline rounded-lg bg-ledger-surface shadow-sm">
-          <table className="w-full text-left border-collapse font-body-sm text-sm">
-            <thead>
-              <tr className="bg-ledger-surface border-b border-bahi-hairline text-secondary uppercase font-bold text-xs">
-                <th className="px-6 py-4">Product</th>
-                <th className="px-6 py-4">Transaction Type</th>
-                <th className="px-6 py-4 text-right">Quantity</th>
-                <th className="px-6 py-4 text-right">Previous Stock</th>
-                <th className="px-6 py-4 text-right">New Stock</th>
-                <th className="px-6 py-4">Note</th>
-                <th className="px-6 py-4">Date & Time</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ledger-divider">
-              {sortedTransactions.map((t) => (
-                <tr key={t._id} className="hover:bg-surface-container-high transition-colors">
-                  <td className="px-6 py-4 font-bold text-on-surface">
-                    {t.product ? t.product.name : <span className="text-secondary italic">Deleted Product</span>}
-                  </td>
-                  <td className="px-6 py-4">
-                    <StatusBadge type={t.type} />
-                  </td>
-                  <td className="px-6 py-4 text-right font-number-data text-on-surface">
-                    {t.quantity} {t.product?.unit || ''}
-                  </td>
-                  <td className="px-6 py-4 text-right font-number-data text-secondary">
-                    {t.previousStock}
-                  </td>
-                  <td className="px-6 py-4 text-right font-number-data text-on-surface font-semibold">
-                    {t.newStock}
-                  </td>
-                  <td className="px-6 py-4 text-secondary max-w-[200px] truncate" title={t.note}>
-                    {t.note || <span className="italic text-outline-variant">-</span>}
-                  </td>
-                  <td className="px-6 py-4 text-secondary whitespace-nowrap">
-                    {formatDateTime(t.createdAt)}
-                  </td>
+        <>
+          {/* Mobile Card List (Visible on mobile, hidden on medium screens and up) */}
+          <div className="block md:hidden space-y-3">
+            {sortedTransactions.map((t) => (
+              <div key={t._id} className="bg-ledger-surface border border-bahi-hairline rounded-lg p-4 space-y-3 shadow-sm bahi-spine">
+                <div className="flex justify-between items-start">
+                  <div className="min-w-0 flex-grow">
+                    <h4 className="font-bold text-on-surface text-base truncate">
+                      {t.product ? t.product.name : <span className="text-secondary italic">Deleted Product</span>}
+                    </h4>
+                    <span className="text-xs text-secondary block mt-0.5">{formatDateTime(t.createdAt)}</span>
+                  </div>
+                  <StatusBadge type={t.type} className="ml-2 flex-shrink-0" />
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-ledger-divider text-xs">
+                  <div>
+                    <span className="block text-secondary mb-0.5">Qty</span>
+                    <span className="font-number-data text-on-surface font-semibold">
+                      {t.quantity} {t.product?.unit || ''}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-secondary mb-0.5">Prev Stock</span>
+                    <span className="font-number-data text-secondary">{t.previousStock}</span>
+                  </div>
+                  <div>
+                    <span className="block text-secondary mb-0.5">New Stock</span>
+                    <span className="font-number-data text-on-surface font-semibold">{t.newStock}</span>
+                  </div>
+                </div>
+                
+                {t.note && (
+                  <div className="pt-2 border-t border-ledger-divider text-xs text-secondary italic">
+                    <strong>Note: </strong>{t.note}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table (Hidden on mobile, visible on medium screens and up) */}
+          <div className="hidden md:block overflow-x-auto border border-bahi-hairline rounded-lg bg-ledger-surface shadow-sm">
+            <table className="w-full text-left border-collapse font-body-sm text-sm">
+              <thead>
+                <tr className="bg-ledger-surface border-b border-bahi-hairline text-secondary uppercase font-bold text-xs">
+                  <th className="px-6 py-4">Product</th>
+                  <th className="px-6 py-4">Transaction Type</th>
+                  <th className="px-6 py-4 text-right">Quantity</th>
+                  <th className="px-6 py-4 text-right">Previous Stock</th>
+                  <th className="px-6 py-4 text-right">New Stock</th>
+                  <th className="px-6 py-4">Note</th>
+                  <th className="px-6 py-4">Date & Time</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-ledger-divider">
+                {sortedTransactions.map((t) => (
+                  <tr key={t._id} className="hover:bg-surface-container-high transition-colors">
+                    <td className="px-6 py-4 font-bold text-on-surface">
+                      {t.product ? t.product.name : <span className="text-secondary italic">Deleted Product</span>}
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusBadge type={t.type} />
+                    </td>
+                    <td className="px-6 py-4 text-right font-number-data text-on-surface">
+                      {t.quantity} {t.product?.unit || ''}
+                    </td>
+                    <td className="px-6 py-4 text-right font-number-data text-secondary">
+                      {t.previousStock}
+                    </td>
+                    <td className="px-6 py-4 text-right font-number-data text-on-surface font-semibold">
+                      {t.newStock}
+                    </td>
+                    <td className="px-6 py-4 text-secondary max-w-[200px] truncate" title={t.note}>
+                      {t.note || <span className="italic text-outline-variant">-</span>}
+                    </td>
+                    <td className="px-6 py-4 text-secondary whitespace-nowrap">
+                      {formatDateTime(t.createdAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </main>
   )

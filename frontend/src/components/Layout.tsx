@@ -11,9 +11,6 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const OWNER_AVATAR =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuB5v_YyKwArTgHYA4vvSI1OQKQUE7WhA7eycnjgq2hLjfYaWUNZbmw4LOX_zZEsFbiWB7qCWcazN_Tf9Hp1mbwFrDkrQLNrEobWV8kqjDsTmYRfwl_XojO7ORmxJI81rPY29pYlVMtHmtp6lEUZarHGDDtiplMmKNtpaT1ZG82qrBahbAhyzfIof8UNkVbsnA1hcnxGbJXlqqeKOhMOcZaEtcwygiCDP8wJQY2Ilyiak3_V5GAWk5nrfqwTvF33pxfIus7gvGwA2ZwF'
-
 const NAV_ITEMS: { id: PageId; icon: string; label: string }[] = [
   { id: 'home',         icon: 'home',         label: 'Home'         },
   { id: 'inventory',    icon: 'inventory_2',  label: 'Inventory'    },
@@ -239,13 +236,22 @@ export default function Layout({ currentPage, setPage, children }: LayoutProps) 
         {/* Header */}
         <header className="sticky top-0 z-40 bg-ledger-surface hairline-bottom flex justify-between items-center h-row-height-min px-5 md:px-8 lg:px-10">
           <div className="flex items-center gap-3">
-            {/* Mobile header: full original horizontal logo */}
-            <img
-              src="/stockpilot-logo.png"
-              alt="StockPilot"
-              className="h-9 w-auto object-contain lg:hidden"
-            />
-            <div className="hidden lg:block">
+            {currentPage === 'home' ? (
+              <img
+                src="/stockpilot-logo.png"
+                alt="StockPilot"
+                className="h-9 w-auto object-contain lg:hidden"
+              />
+            ) : (
+              <button
+                onClick={() => setPage('home')}
+                className="lg:hidden w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors flex-shrink-0"
+                title="Back to Home"
+              >
+                <span className="material-symbols-outlined text-primary">arrow_back</span>
+              </button>
+            )}
+            <div className={currentPage === 'home' ? "hidden lg:block" : ""}>
               <h1 className="font-headline-sm text-base md:text-lg text-primary leading-tight">
                 {meta.title}
               </h1>
@@ -270,7 +276,7 @@ export default function Layout({ currentPage, setPage, children }: LayoutProps) 
               </button>
 
               {isNotifOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-ledger-surface border border-bahi-hairline rounded-lg shadow-xl py-2 z-50 max-h-[400px] overflow-y-auto">
+                <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-ledger-surface border border-bahi-hairline rounded-lg shadow-xl py-2 z-50 max-h-[400px] overflow-y-auto">
                   <div className="px-4 py-2 border-b border-ledger-divider flex justify-between items-center">
                     <span className="font-bold text-xs uppercase text-secondary tracking-wider">Notifications</span>
                     {unreadCount > 0 && (
