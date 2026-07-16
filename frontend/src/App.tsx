@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import './index.css'
-import Layout    from './components/Layout'
-import Home      from './pages/Home'
-import Analytics from './pages/Analytics'
-import Inventory from './pages/Inventory'
-import Profile   from './pages/Profile'
+import Layout       from './components/Layout'
+import AIAssistant  from './components/AIAssistant'
+import Home         from './pages/Home'
+import Analytics    from './pages/Analytics'
+import Inventory    from './pages/Inventory'
+import Profile      from './pages/Profile'
 import Transactions from './pages/Transactions'
 import type { PageId } from './types'
 
@@ -35,13 +36,16 @@ function App() {
   }
 
   return (
-    <Layout currentPage={currentPage} setPage={setPage}>
-      {currentPage === 'home'         && <Home />}
-      {currentPage === 'inventory'    && <Inventory />}
-      {currentPage === 'transactions' && <Transactions />}
-      {currentPage === 'analytics'    && <Analytics />}
-      {currentPage === 'profile'      && <Profile />}
-    </Layout>
+    <>
+      <Layout currentPage={currentPage} setPage={setPage}>
+        {currentPage === 'home'         && <Home />}
+        {currentPage === 'inventory'    && <Inventory />}
+        {currentPage === 'transactions' && <Transactions />}
+        {currentPage === 'analytics'    && <Analytics />}
+        {currentPage === 'profile'      && <Profile />}
+      </Layout>
+      <AIAssistant />
+    </>
   )
 }
 
