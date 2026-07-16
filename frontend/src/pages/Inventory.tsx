@@ -55,7 +55,14 @@ export default function Inventory() {
   const [allItems,     setAllItems]     = useState<InventoryItem[]>([])
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState(false)
-  const [searchQuery,  setSearchQuery]  = useState('')
+  const [searchQuery,  setSearchQuery]  = useState<string>(() => {
+    const saved = localStorage.getItem('inventory-search')
+    if (saved) {
+      localStorage.removeItem('inventory-search')
+      return saved
+    }
+    return ''
+  })
   const [activeFilter, setActiveFilter] = useState<FilterId>('all')
 
   // Modal State

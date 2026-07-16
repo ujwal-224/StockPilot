@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { sendChatMessage } from '../services/aiService'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -10,21 +10,26 @@ interface Message {
   timestamp: Date
 }
 
+// ─── Suggested Prompts ────────────────────────────────────────────────────────
+
+const SUGGESTIONS = [
+  { label: 'Inventory Summary',      icon: 'inventory_2',     prompt: 'Give me a complete summary of my current inventory.' },
+  { label: 'Low Stock Items',        icon: 'warning',         prompt: 'Which items are currently low on stock or out of stock?' },
+  { label: 'Restocking Suggestions', icon: 'shopping_cart',   prompt: 'Which items should I restock soon? Give me purchase recommendations.' },
+  { label: "Today's Updates",        icon: 'update',          prompt: 'What are the most important inventory updates I should know about today?' },
+]
+
 // ─── Markdown Renderer ────────────────────────────────────────────────────────
 
-/** Converts inline markdown tokens (**bold**, *italic*, `code`) to React nodes. */
 function parseInline(text: string, keyBase: string): React.ReactNode[] {
   const parts: React.ReactNode[] = []
-  // Matches: `code`, **bold**, __bold__, *italic*, _italic_
   const regex = /(`[^`\n]+`|\*\*[^*]+\*\*|__[^_]+__|\*[^*\n]+\*|_[^_\n]+_)/g
   let lastIndex = 0
   let match
   let ki = 0
 
   while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index))
-    }
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
     const m = match[0]
     const k = `${keyBase}-i${ki++}`
     if (m.startsWith('`') && m.endsWith('`')) {
@@ -44,7 +49,6 @@ function parseInline(text: string, keyBase: string): React.ReactNode[] {
   return parts
 }
 
-/** Converts a full markdown string into rendered React elements. */
 function renderMarkdown(text: string): React.ReactNode {
   const lines = text.split('\n')
   const elements: React.ReactNode[] = []
@@ -55,13 +59,11 @@ function renderMarkdown(text: string): React.ReactNode {
     const line = lines[i]
     const k = String(key++)
 
-    // ── Fenced code block ──────────────────────────────────────────────────────
     if (line.trimStart().startsWith('```')) {
       const codeLines: string[] = []
       i++
       while (i < lines.length && !lines[i].trimStart().startsWith('```')) {
-        codeLines.push(lines[i])
-        i++
+        codeLines.push(lines[i]); i++
       }
       elements.push(
         <pre key={k} className="bg-ledger-paper rounded-lg px-3 py-2.5 text-xs font-mono overflow-x-auto my-2 border border-ledger-hairline text-on-surface leading-relaxed">
@@ -70,70 +72,36 @@ function renderMarkdown(text: string): React.ReactNode {
       )
       i++; continue
     }
+    if (line.startsWith('### ')) { elements.push(<p key={k} className="font-semibold text-sm text-on-surface mt-2 mb-0.5">{parseInline(line.slice(4), k)}</p>); i++; continue }
+    if (line.startsWith('## '))  { elements.push(<p key={k} className="font-bold text-sm text-on-surface mt-2 mb-0.5">{parseInline(line.slice(3), k)}</p>); i++; continue }
+    if (line.startsWith('# '))   { elements.push(<p key={k} className="font-bold text-base text-primary mt-2 mb-1">{parseInline(line.slice(2), k)}</p>); i++; continue }
 
-    // ── Headings ──────────────────────────────────────────────────────────────
-    if (line.startsWith('### ')) {
-      elements.push(<p key={k} className="font-semibold text-sm text-on-surface mt-2 mb-0.5">{parseInline(line.slice(4), k)}</p>)
-      i++; continue
-    }
-    if (line.startsWith('## ')) {
-      elements.push(<p key={k} className="font-bold text-sm text-on-surface mt-2 mb-0.5">{parseInline(line.slice(3), k)}</p>)
-      i++; continue
-    }
-    if (line.startsWith('# ')) {
-      elements.push(<p key={k} className="font-bold text-base text-primary mt-2 mb-1">{parseInline(line.slice(2), k)}</p>)
-      i++; continue
-    }
-
-    // ── Bullet list (collect consecutive items) ───────────────────────────────
     if (/^[-*+] /.test(line)) {
       const items: React.ReactNode[] = []
       while (i < lines.length && /^[-*+] /.test(lines[i])) {
-        items.push(<li key={i}>{parseInline(lines[i].slice(2), `${k}-li${i}`)}</li>)
-        i++
+        items.push(<li key={i}>{parseInline(lines[i].slice(2), `${k}-li${i}`)}</li>); i++
       }
-      elements.push(
-        <ul key={k} className="list-disc pl-5 space-y-0.5 my-1 text-sm">{items}</ul>
-      )
+      elements.push(<ul key={k} className="list-disc pl-5 space-y-0.5 my-1 text-sm">{items}</ul>)
       continue
     }
-
-    // ── Numbered list (collect consecutive items) ─────────────────────────────
     if (/^\d+\. /.test(line)) {
       const items: React.ReactNode[] = []
       while (i < lines.length && /^\d+\. /.test(lines[i])) {
-        items.push(<li key={i}>{parseInline(lines[i].replace(/^\d+\. /, ''), `${k}-li${i}`)}</li>)
-        i++
+        items.push(<li key={i}>{parseInline(lines[i].replace(/^\d+\. /, ''), `${k}-li${i}`)}</li>); i++
       }
-      elements.push(
-        <ol key={k} className="list-decimal pl-5 space-y-0.5 my-1 text-sm">{items}</ol>
-      )
+      elements.push(<ol key={k} className="list-decimal pl-5 space-y-0.5 my-1 text-sm">{items}</ol>)
       continue
     }
+    if (/^---+$/.test(line.trim())) { elements.push(<hr key={k} className="border-ledger-hairline my-2" />); i++; continue }
+    if (line.trim() === '') { elements.push(<div key={k} className="h-1.5" />); i++; continue }
 
-    // ── Horizontal rule ───────────────────────────────────────────────────────
-    if (/^---+$/.test(line.trim())) {
-      elements.push(<hr key={k} className="border-ledger-hairline my-2" />)
-      i++; continue
-    }
-
-    // ── Blank line ────────────────────────────────────────────────────────────
-    if (line.trim() === '') {
-      elements.push(<div key={k} className="h-1.5" />)
-      i++; continue
-    }
-
-    // ── Regular paragraph ─────────────────────────────────────────────────────
-    elements.push(
-      <p key={k} className="text-sm leading-relaxed">{parseInline(line, k)}</p>
-    )
+    elements.push(<p key={k} className="text-sm leading-relaxed">{parseInline(line, k)}</p>)
     i++
   }
-
   return <div className="space-y-0.5">{elements}</div>
 }
 
-// ─── Typing Indicator ─────────────────────────────────────────────────────────
+// ─── Typing Indicator (three animated dots) ───────────────────────────────────
 
 function TypingIndicator() {
   return (
@@ -150,6 +118,42 @@ function TypingIndicator() {
           <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── Copy Button ──────────────────────────────────────────────────────────────
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard API unavailable — silently ignore
+    }
+  }
+
+  return (
+    <div className="relative inline-flex">
+      <button
+        onClick={handleCopy}
+        title="Copy response"
+        className="w-6 h-6 flex items-center justify-center rounded-md text-outline hover:text-primary hover:bg-ledger-surface transition-all"
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: '14px', fontVariationSettings: copied ? "'FILL' 1" : "'FILL' 0" }}>
+          {copied ? 'check_circle' : 'content_copy'}
+        </span>
+      </button>
+      {copied && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-on-surface text-white text-[10px] rounded-md whitespace-nowrap pointer-events-none z-10">
+          Copied!
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-on-surface" />
+        </div>
+      )}
     </div>
   )
 }
@@ -183,11 +187,60 @@ function MessageBubble({ msg }: { msg: Message }) {
         </span>
       </div>
       <div className="flex flex-col max-w-[80%]">
-        <div className="bg-ledger-surface border border-ledger-hairline rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm">
-          {/* Rendered markdown — no raw ** or * shown */}
+        <div className="group bg-ledger-surface border border-ledger-hairline rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm">
           {renderMarkdown(msg.content)}
+          {/* Copy button — appears in bottom-right of bubble on hover */}
+          <div className="flex justify-end mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <CopyButton text={msg.content} />
+          </div>
         </div>
         <span className="text-[10px] text-outline mt-1 ml-1">{timeStr}</span>
+      </div>
+    </div>
+  )
+}
+
+// ─── Empty / Welcome State ────────────────────────────────────────────────────
+
+interface WelcomeStateProps {
+  onSuggestion: (prompt: string) => void
+}
+
+function WelcomeState({ onSuggestion }: WelcomeStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full px-4 py-6 text-center gap-5">
+      {/* Icon */}
+      <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center flex-shrink-0">
+        <span className="material-symbols-outlined text-primary" style={{ fontSize: '32px', fontVariationSettings: "'FILL' 1" }}>
+          auto_awesome
+        </span>
+      </div>
+
+      {/* Title + subtitle */}
+      <div className="space-y-1.5">
+        <h2 className="font-bold text-on-surface text-base leading-tight">Hello! I'm StockPilot AI</h2>
+        <p className="text-outline text-xs leading-relaxed max-w-[260px]">
+          I can help you with inventory management, stock monitoring, restocking suggestions, and business insights.
+        </p>
+      </div>
+
+      {/* Suggestion cards */}
+      <div className="grid grid-cols-2 gap-2 w-full max-w-xs">
+        {SUGGESTIONS.map(s => (
+          <button
+            key={s.label}
+            onClick={() => onSuggestion(s.prompt)}
+            className="flex flex-col items-start gap-1.5 p-3 bg-ledger-surface border border-ledger-hairline rounded-xl hover:border-primary hover:bg-primary/5 transition-all text-left active:scale-95 group"
+          >
+            <span
+              className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform"
+              style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}
+            >
+              {s.icon}
+            </span>
+            <span className="text-[11px] font-medium text-on-surface leading-tight">{s.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -198,6 +251,8 @@ function MessageBubble({ msg }: { msg: Message }) {
 interface ChatWindowProps {
   messages: Message[]
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+  hasUserSentMessage: boolean
+  setHasUserSentMessage: React.Dispatch<React.SetStateAction<boolean>>
   isMaximized: boolean
   onMinimize: () => void
   onToggleMaximize: () => void
@@ -207,17 +262,19 @@ interface ChatWindowProps {
 function ChatWindow({
   messages,
   setMessages,
+  hasUserSentMessage,
+  setHasUserSentMessage,
   isMaximized,
   onMinimize,
   onToggleMaximize,
   onClose,
 }: ChatWindowProps) {
-  const [input, setInput]       = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [input, setInput]           = useState('')
+  const [isLoading, setIsLoading]   = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef       = useRef<HTMLInputElement>(null)
 
-  // Smooth-scroll to the newest message or typing indicator
+  // Smooth-scroll to newest message / typing indicator
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
@@ -228,10 +285,11 @@ function ChatWindow({
     return () => clearTimeout(t)
   }, [isMaximized])
 
-  const handleSend = async () => {
-    const trimmed = input.trim()
+  const dispatchMessage = useCallback(async (text: string) => {
+    const trimmed = text.trim()
     if (!trimmed || isLoading) return
 
+    setHasUserSentMessage(true)
     setMessages(prev => [...prev, {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -260,20 +318,27 @@ function ChatWindow({
       setIsLoading(false)
       setTimeout(() => inputRef.current?.focus(), 50)
     }
-  }
+  }, [isLoading, setMessages, setHasUserSentMessage])
+
+  const handleSend = () => dispatchMessage(input)
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
-  // ── Sizing based on mode ───────────────────────────────────────────────────
+  const handleSuggestion = (prompt: string) => dispatchMessage(prompt)
+
+  // ── Panel sizing ──────────────────────────────────────────────────────────
   const panelStyle = isMaximized
     ? { width: 'min(900px, 80vw)', height: 'min(90vh, 860px)' }
     : { width: 'min(380px, calc(100vw - 2rem))', height: 'min(560px, calc(100dvh - 10rem))' }
 
+  // Show welcome state only when no user message has been sent yet
+  const showWelcome = !hasUserSentMessage
+
   return (
     <>
-      {/* ── Backdrop (maximized only) — clicking it restores floating mode ── */}
+      {/* Backdrop — maximized mode only */}
       {isMaximized && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
@@ -281,7 +346,7 @@ function ChatWindow({
         />
       )}
 
-      {/* ── Outer positioning shell ── */}
+      {/* Outer positioning shell */}
       <div
         className={
           isMaximized
@@ -289,22 +354,19 @@ function ChatWindow({
             : 'fixed bottom-24 right-4 sm:right-6 sm:bottom-6 z-50'
         }
       >
-        {/* ── Panel ── */}
+        {/* Panel */}
         <div
           className="flex flex-col bg-ledger-paper rounded-2xl shadow-2xl border border-ledger-hairline overflow-hidden bahi-spine pointer-events-auto"
           style={panelStyle}
         >
-
           {/* ── Header ── */}
           <div className="flex items-center gap-3 px-4 py-3 bg-primary flex-shrink-0">
-            {/* Icon */}
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
               <span className="material-symbols-outlined text-white" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>
                 auto_awesome
               </span>
             </div>
 
-            {/* Title + status */}
             <div className="flex-grow min-w-0">
               <h3 className="font-bold text-white text-sm leading-tight">StockPilot AI</h3>
               <p className="text-white/70 text-[11px]">
@@ -315,50 +377,35 @@ function ChatWindow({
               </p>
             </div>
 
-            {/* ── Window controls ── */}
+            {/* Window controls */}
             <div className="flex items-center gap-0.5 flex-shrink-0">
-              {/* Minimize — hides window, preserves chat */}
-              <button
-                onClick={onMinimize}
-                title="Minimize"
-                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
-              >
-                <span className="material-symbols-outlined text-white" style={{ fontSize: '20px' }}>
-                  remove
-                </span>
+              <button onClick={onMinimize} title="Minimize" className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors">
+                <span className="material-symbols-outlined text-white" style={{ fontSize: '20px' }}>remove</span>
               </button>
-
-              {/* Maximize / Restore */}
-              <button
-                onClick={onToggleMaximize}
-                title={isMaximized ? 'Restore' : 'Maximize'}
-                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
-              >
-                <span className="material-symbols-outlined text-white" style={{ fontSize: '17px' }}>
-                  {isMaximized ? 'close_fullscreen' : 'open_in_full'}
-                </span>
+              <button onClick={onToggleMaximize} title={isMaximized ? 'Restore' : 'Maximize'} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors">
+                <span className="material-symbols-outlined text-white" style={{ fontSize: '17px' }}>{isMaximized ? 'close_fullscreen' : 'open_in_full'}</span>
               </button>
-
-              {/* Close — resets maximize state too */}
-              <button
-                onClick={onClose}
-                title="Close"
-                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
-              >
-                <span className="material-symbols-outlined text-white" style={{ fontSize: '20px' }}>
-                  close
-                </span>
+              <button onClick={onClose} title="Close" className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors">
+                <span className="material-symbols-outlined text-white" style={{ fontSize: '20px' }}>close</span>
               </button>
             </div>
           </div>
 
-          {/* ── Messages ── */}
-          <div className="flex-grow overflow-y-auto px-3 pt-4 pb-2 no-scrollbar">
-            {messages.map(msg => (
-              <MessageBubble key={msg.id} msg={msg} />
-            ))}
-            {isLoading && <TypingIndicator />}
-            <div ref={messagesEndRef} />
+          {/* ── Body ── */}
+          <div className="flex-grow overflow-y-auto no-scrollbar">
+            {showWelcome ? (
+              /* Empty / Welcome state with suggestion cards */
+              <WelcomeState onSuggestion={handleSuggestion} />
+            ) : (
+              /* Message list */
+              <div className="px-3 pt-4 pb-2">
+                {messages.map(msg => (
+                  <MessageBubble key={msg.id} msg={msg} />
+                ))}
+                {isLoading && <TypingIndicator />}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
           </div>
 
           {/* ── Input row ── */}
@@ -388,7 +435,6 @@ function ChatWindow({
             </div>
             <p className="text-[10px] text-outline text-center mt-2">Powered by StockPilot AI</p>
           </div>
-
         </div>
       </div>
     </>
@@ -405,7 +451,6 @@ interface FloatingButtonProps {
 
 function FloatingButton({ isOpen, isHidden, onClick }: FloatingButtonProps) {
   if (isHidden) return null
-
   return (
     <button
       onClick={onClick}
@@ -421,10 +466,7 @@ function FloatingButton({ isOpen, isHidden, onClick }: FloatingButtonProps) {
         }
       `}
     >
-      <span
-        className="material-symbols-outlined"
-        style={{ fontSize: '26px', fontVariationSettings: "'FILL' 1" }}
-      >
+      <span className="material-symbols-outlined" style={{ fontSize: '26px', fontVariationSettings: "'FILL' 1" }}>
         {isOpen ? 'close' : 'auto_awesome'}
       </span>
     </button>
@@ -434,30 +476,18 @@ function FloatingButton({ isOpen, isHidden, onClick }: FloatingButtonProps) {
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 export default function AIAssistant() {
-  const [isOpen,      setIsOpen]      = useState(false)
-  const [isMaximized, setIsMaximized] = useState(false)
+  const [isOpen,               setIsOpen]               = useState(false)
+  const [isMaximized,          setIsMaximized]           = useState(false)
+  // Tracks whether the user has sent at least one message (controls welcome state visibility)
+  const [hasUserSentMessage,   setHasUserSentMessage]    = useState(false)
 
-  // Messages live in the parent so they persist across minimize/open cycles
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'ai',
-      content: "Namaste! I'm the StockPilot AI assistant. Ask me anything about your inventory, sales trends, or restocking strategies.",
-      timestamp: new Date(),
-    },
-  ])
+  // Messages live in the parent — preserved across minimize/open cycles
+  const [messages, setMessages] = useState<Message[]>([])
 
-  // Minimize: hide window but keep chat history; float button still visible
-  const handleMinimize = () => setIsOpen(false)
-
-  // Close: hide window AND reset maximized state; chat history preserved
-  const handleClose = () => { setIsOpen(false); setIsMaximized(false) }
-
-  // Maximize / Restore toggle
-  const handleToggleMaximize = () => setIsMaximized(prev => !prev)
-
-  // Float button: toggle open. If re-opening, restore window in last mode.
-  const handleFloatButton = () => setIsOpen(prev => !prev)
+  const handleMinimize        = () => setIsOpen(false)
+  const handleClose           = () => { setIsOpen(false); setIsMaximized(false) }
+  const handleToggleMaximize  = () => setIsMaximized(prev => !prev)
+  const handleFloatButton     = () => setIsOpen(prev => !prev)
 
   return (
     <>
@@ -465,14 +495,14 @@ export default function AIAssistant() {
         <ChatWindow
           messages={messages}
           setMessages={setMessages}
+          hasUserSentMessage={hasUserSentMessage}
+          setHasUserSentMessage={setHasUserSentMessage}
           isMaximized={isMaximized}
           onMinimize={handleMinimize}
           onToggleMaximize={handleToggleMaximize}
           onClose={handleClose}
         />
       )}
-
-      {/* Hide the float button when maximized to avoid z-index overlap with backdrop */}
       <FloatingButton
         isOpen={isOpen}
         isHidden={isMaximized}
