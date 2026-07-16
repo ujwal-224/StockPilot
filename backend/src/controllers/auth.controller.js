@@ -46,6 +46,10 @@ export const signup = async (req, res, next) => {
     const { name, password, shopName, invitationCode } = req.body;
     const email = normalizeEmail(req.body.email);
 
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ success: false, message: "Authentication is not configured" });
+    }
+
     if (!name?.trim() || !isEmail(email) || typeof password !== "string" || password.length < 8 || password.length > 128) {
       return res.status(400).json({
         success: false,
@@ -122,6 +126,10 @@ export const signup = async (req, res, next) => {
 
 export const signin = async (req, res, next) => {
   try {
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ success: false, message: "Authentication is not configured" });
+    }
+
     const email = normalizeEmail(req.body.email);
     const user = await User.findOne({ email }).select("+passwordHash");
 

@@ -26,10 +26,12 @@ function App() {
   }
 
   const [currentPage, setCurrentPage] = useState<PageId>(getPageFromPath)
+  const [pathname, setPathname] = useState(() => window.location.pathname)
 
   useEffect(() => {
     const handlePopState = () => {
       setCurrentPage(getPageFromPath())
+      setPathname(window.location.pathname)
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
@@ -39,17 +41,18 @@ function App() {
     setCurrentPage(page)
     const path = page === 'home' ? '/' : `/${page}`
     window.history.pushState(null, '', path)
+    setPathname(path)
   }
 
   const navigateAuth = (path: '/signin' | '/signup') => {
     window.history.pushState(null, '', path)
-    window.dispatchEvent(new PopStateEvent('popstate'))
+    setPathname(path)
   }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-primary font-semibold">Loading StockPilot…</div>
 
   if (!session) {
-    return window.location.pathname === '/signup'
+    return pathname === '/signup'
       ? <SignUp onShowSignIn={() => navigateAuth('/signin')} />
       : <SignIn onShowSignUp={() => navigateAuth('/signup')} />
   }
