@@ -221,14 +221,18 @@ export default function Layout({ currentPage, setPage, children }: LayoutProps) 
         {/* Header */}
         <header className="sticky top-0 z-40 bg-ledger-surface hairline-bottom flex justify-between items-center h-row-height-min px-5 md:px-8 lg:px-10">
           <div className="flex items-center gap-3">
-            {/* Mobile: avatar on Home, menu icon on other pages */}
+            {/* Mobile: avatar on Home, back arrow on other pages */}
             {currentPage === 'home' ? (
               <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-fixed border border-outline-variant lg:hidden">
                 <img className="w-full h-full object-cover" src={OWNER_AVATAR} alt="Store owner" />
               </div>
             ) : (
-              <button className="lg:hidden w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors">
-                <span className="material-symbols-outlined text-primary">menu</span>
+              <button
+                onClick={() => setPage('home')}
+                className="lg:hidden w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors"
+                title="Back to Home"
+              >
+                <span className="material-symbols-outlined text-primary">arrow_back</span>
               </button>
             )}
             <div>
@@ -256,7 +260,7 @@ export default function Layout({ currentPage, setPage, children }: LayoutProps) 
               </button>
 
               {isNotifOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-ledger-surface border border-bahi-hairline rounded-lg shadow-xl py-2 z-50 max-h-[400px] overflow-y-auto">
+                <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-ledger-surface border border-bahi-hairline rounded-lg shadow-xl py-2 z-50 max-h-[400px] overflow-y-auto">
                   <div className="px-4 py-2 border-b border-ledger-divider flex justify-between items-center">
                     <span className="font-bold text-xs uppercase text-secondary tracking-wider">Notifications</span>
                     {unreadCount > 0 && (

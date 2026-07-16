@@ -496,7 +496,7 @@ export default function Inventory() {
                       <span className="font-body-md font-bold text-on-surface text-sm md:text-base truncate">
                         {item.name}
                       </span>
-                      <div className="w-32 md:w-40 h-1.5 bg-outline-variant rounded-full mt-1.5 overflow-hidden">
+                      <div className="w-24 sm:w-32 md:w-40 h-1.5 bg-outline-variant rounded-full mt-1.5 overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-700 ${cfg.bar}`}
                           style={{ width: `${item.progressPct}%` }}
@@ -535,7 +535,7 @@ export default function Inventory() {
 
       {/* ── Add Product Modal ── */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-transparent z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
           <div className="bg-ledger-surface max-w-md w-full rounded-lg border border-bahi-hairline bahi-spine p-6 shadow-xl relative space-y-4">
             <div className="flex justify-between items-center hairline-bottom pb-3">
               <h3 className="font-headline-sm text-primary">
@@ -690,7 +690,7 @@ export default function Inventory() {
 
       {/* ── Delete Confirmation Modal ── */}
       {deletingId && (
-        <div className="fixed inset-0 bg-transparent z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
           <div className="bg-ledger-surface max-w-md w-full rounded-lg border border-bahi-hairline bahi-spine-red p-6 shadow-xl relative space-y-4">
             <div className="flex justify-between items-center hairline-bottom pb-3">
               <h3 className="font-headline-sm text-stock-red">Delete Product</h3>
@@ -733,7 +733,7 @@ export default function Inventory() {
 
       {/* ── Record Transaction Modal ── */}
       {isTransactionModalOpen && (
-        <div className="fixed inset-0 bg-transparent z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
           <div className="bg-ledger-surface max-w-md w-full rounded-lg border border-bahi-hairline bahi-spine p-6 shadow-xl relative space-y-4">
             <div className="flex justify-between items-center hairline-bottom pb-3">
               <h3 className="font-headline-sm text-primary">Record Transaction</h3>
