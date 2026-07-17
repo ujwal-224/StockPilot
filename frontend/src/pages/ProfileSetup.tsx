@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import { getShopProfile, updateShopProfile } from '../services/shopService'
 
@@ -40,7 +41,7 @@ const LANGUAGES = [
 ]
 
 export default function ProfileSetup() {
-  const { session, signOut, refreshSession } = useAuth()
+  const { signOut, refreshSession } = useAuth()
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -153,8 +154,8 @@ export default function ProfileSetup() {
         setError('Failed to update shop details.')
         setLoading(false)
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Something went wrong while setting up profile.')
+    } catch (err: unknown) {
+      setError(axios.isAxiosError(err) ? err.response?.data?.message || 'Something went wrong while setting up profile.' : 'Something went wrong while setting up profile.')
       setLoading(false)
     }
   }

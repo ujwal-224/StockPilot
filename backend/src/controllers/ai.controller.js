@@ -80,10 +80,10 @@ export const chat = async (req, res, next) => {
   try {
     const { message } = req.body;
 
-    if (typeof message !== "string" || !message.trim()) {
+    if (typeof message !== "string" || !message.trim() || message.length > 2000) {
       return res.status(400).json({
         success: false,
-        message: "Message is required and must be a non-empty string",
+        message: "Message must contain between 1 and 2000 characters",
       });
     }
 
@@ -101,7 +101,7 @@ export const chat = async (req, res, next) => {
     const products = await Product.find(
       { shop: req.auth.shopId },
       "name category stock threshold unit price"
-    ).lean();
+    ).sort({ stock: 1 }).limit(500).lean();
 
     // 2. Build readable inventory summary
     const inventorySummary = buildInventorySummary(products);
@@ -236,7 +236,7 @@ export const getInsights = async (req, res, next) => {
     const products = await Product.find(
       { shop: req.auth.shopId },
       "name stock threshold category unit price"
-    ).lean();
+    ).sort({ stock: 1 }).limit(500).lean();
     const inventorySummary = buildInventorySummary(products);
     const fallbackInsights = buildFallbackInsights(products);
 

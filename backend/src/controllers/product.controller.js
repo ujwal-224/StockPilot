@@ -1,10 +1,12 @@
 import Product from '../models/Product.js';
 import AuditLog from '../models/AuditLog.js';
+import Transaction from '../models/Transaction.js';
 
 // ─── Create Product ───────────────────────────────────────────────────────────
 export const createProduct = async (req, res, next) => {
   try {
-    const product = await Product.create({ ...req.body, shop: req.auth.shopId });
+    const { name, category, price, stock, unit, threshold, image } = req.body;
+    const product = await Product.create({ name, category, price, stock, unit, threshold, image, shop: req.auth.shopId });
     await AuditLog.create({
       shop: req.auth.shopId, user: req.auth.userId, action: 'PRODUCT_CREATED',
       resourceType: 'PRODUCT', resourceId: product._id, after: product.toObject(),
@@ -23,7 +25,7 @@ export const createProduct = async (req, res, next) => {
 // ─── Get All Products ─────────────────────────────────────────────────────────
 export const getAllProducts = async (req, res, next) => {
   try {
-    const products = await Product.find({ shop: req.auth.shopId }).sort({ createdAt: -1 });
+    const products = await Product.find({ shop: req.auth.shopId }).sort({ createdAt: -1 }).lean();
 
     res.status(200).json({
       success: true,
@@ -75,9 +77,11 @@ export const getProductById = async (req, res, next) => {
 export const updateProduct = async (req, res, next) => {
   try {
     const before = await Product.findOne({ _id: req.params.id, shop: req.auth.shopId });
+    const allowed = ['name', 'category', 'price', 'stock', 'unit', 'threshold', 'image'];
+    const updates = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowed.includes(key)));
     const product = before && await Product.findOneAndUpdate(
       { _id: req.params.id, shop: req.auth.shopId },
-      { ...req.body, shop: req.auth.shopId },
+      updates,
       { new: true, runValidators: true }
     );
 
@@ -103,6 +107,9 @@ export const updateProduct = async (req, res, next) => {
 // ─── Delete Product ───────────────────────────────────────────────────────────
 export const deleteProduct = async (req, res, next) => {
   try {
+    if (await Transaction.exists({ product: req.params.id, shop: req.auth.shopId })) {
+      return res.status(409).json({ success: false, message: 'Products with transaction history cannot be deleted' });
+    }
     const product = await Product.findOneAndDelete({ _id: req.params.id, shop: req.auth.shopId });
 
     if (!product) {
