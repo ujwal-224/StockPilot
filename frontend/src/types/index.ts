@@ -40,6 +40,8 @@ export interface InventoryItem {
 export interface TransactionRecord {
   _id: string
   product: ProductInfo | null
+  productSnapshot?: { name?: string; category?: string; unit?: string }
+  unitPrice?: number
   type: 'SALE' | 'PURCHASE' | 'ADJUSTMENT'
   quantity: number
   previousStock: number

@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     applyToken(token)
     getSession()
       .then((data) => setSession(data))
-      .catch(() => clearToken())
+      .catch(() => { clearToken(); setSession(null) })
       .finally(() => setLoading(false))
   }, [])
 

@@ -12,13 +12,17 @@ import teamRoutes from "./routes/team.routes.js";
 import shopRoutes from "./routes/shop.routes.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 // ===============================
 // Middleware
 // ===============================
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim());
+app.use(cors({ origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)) }));
+app.use(express.json({ limit: "256kb" }));
+app.use(express.urlencoded({ extended: true, limit: "256kb" }));
 
 // ===============================
 // Health Check Route

@@ -26,7 +26,13 @@ const transactionSchema = new mongoose.Schema(
     quantity: {
       type: Number,
       required: true,
-      min: 1,
+      min: 0,
+    },
+    unitPrice: { type: Number, min: 0, default: 0 },
+    productSnapshot: {
+      name: { type: String, trim: true },
+      category: { type: String, trim: true },
+      unit: { type: String, trim: true },
     },
     previousStock: {
       type: Number,
@@ -43,6 +49,9 @@ const transactionSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+transactionSchema.index({ shop: 1, createdAt: -1 });
+transactionSchema.index({ shop: 1, type: 1, createdAt: -1 });
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
 

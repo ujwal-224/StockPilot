@@ -78,7 +78,7 @@ StockPilot/
 ## 🚀 Getting Started (Local Setup)
 
 ### Prerequisites
-Ensure you have **Node.js (v18+)** and **npm (v9+)** installed.
+Ensure you have **Node.js v22.12+** and **npm v10+** installed.
 
 ---
 
@@ -100,6 +100,7 @@ Ensure you have **Node.js (v18+)** and **npm (v9+)** installed.
    GROQ_MODEL=your_groq_model
    JWT_SECRET=replace_with_a_long_random_secret
    JWT_EXPIRES_IN=7d
+   CORS_ORIGINS=http://localhost:5173
    ```
 4. Start the backend development server:
    ```bash
@@ -144,7 +145,9 @@ Ensure you have **Node.js (v18+)** and **npm (v9+)** installed.
    * **Start Command**: `npm start`
 4. Add the following **Environment Variables** in the settings tab:
    * `MONGO_URI` (your MongoDB connection string)
-   * `GEMINI_API_KEY` (your Gemini key)
+   * `GROQ_API_KEY` and `GROQ_MODEL` (your Groq credentials)
+   * `JWT_SECRET` (a long random production secret)
+   * `CORS_ORIGINS` (your deployed frontend URL)
    * `PORT` = `5000` (Render allocates this dynamically, but setting it matches internal configs)
 5. Deploy. You will receive a public API URL (e.g. `https://stockpilot-api.onrender.com`).
 

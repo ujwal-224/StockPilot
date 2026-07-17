@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import { getShopProfile, updateShopProfile, type ShopProfile } from '../services/shopService'
 
@@ -41,6 +42,10 @@ const LANGUAGES = [
 
 export default function Profile() {
   const { session, signOut, refreshSession } = useAuth()
+  const [preferences, setPreferences] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('notification_preferences') || '{}') }
+    catch { return {} }
+  })
   const [activeSection, setActiveSection] = useState<'overview' | 'shop-settings'>('overview')
   const [shop, setShop] = useState<ShopProfile | null>(null)
   
@@ -70,7 +75,6 @@ export default function Profile() {
   const isOwner = session?.membership.role === 'OWNER'
 
   const loadShopData = () => {
-    setFetching(true)
     getShopProfile()
       .then((res) => {
         if (res.success && res.data) {
@@ -156,8 +160,8 @@ export default function Profile() {
       } else {
         setError('Failed to update shop details.')
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Something went wrong while updating profile.')
+    } catch (err: unknown) {
+      setError(axios.isAxiosError(err) ? err.response?.data?.message || 'Something went wrong while updating profile.' : 'Something went wrong while updating profile.')
     } finally {
       setLoading(false)
     }
@@ -169,15 +173,20 @@ export default function Profile() {
     }
   }
 
+  const togglePreference = (label: string, defaultValue: boolean) => {
+    const next = { ...preferences, [label]: !(preferences[label] ?? defaultValue) }
+    setPreferences(next)
+    localStorage.setItem('notification_preferences', JSON.stringify(next))
+  }
+
   const settingsItems = [
     { icon: 'storefront', label: 'Shop Settings', badge: null, badgeClass: '' },
     { icon: 'schedule', label: 'Business Hours', badge: null, badgeClass: '' },
     {
       icon: 'chat',
       label: 'WhatsApp Integration',
-      badge: 'ACTIVE',
-      badgeClass:
-        'text-on-tertiary-fixed bg-tertiary-fixed text-[10px] font-bold px-1.5 py-0.5 rounded-full',
+      badge: null,
+      badgeClass: '',
     },
     { icon: 'support_agent', label: 'Support', badge: null, badgeClass: '' },
   ]
@@ -240,43 +249,6 @@ export default function Profile() {
                 {session?.user.name} · <span className="font-bold">{session?.membership.role}</span>
               </p>
 
-              <div className="mt-3 flex flex-wrap gap-2 justify-center">
-                <span className="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-xs font-bold rounded-full uppercase tracking-wider">
-                  Platinum Merchant
-                </span>
-              </div>
-            </div>
-
-            {/* Stats bar */}
-            <div className="grid grid-cols-2 ruled-line bg-surface-container-low">
-              <div className="p-4 text-center border-r border-outline-variant">
-                <p className="font-body-sm text-secondary text-xs">Member Since</p>
-                <p className="font-number-data font-bold text-primary mt-1">OCT 2021</p>
-              </div>
-              <div className="p-4 text-center">
-                <p className="font-body-sm text-secondary text-xs">Store Rating</p>
-                <p className="font-number-data font-bold text-primary flex items-center justify-center gap-1 mt-1">
-                  4.8{' '}
-                  <span
-                    className="material-symbols-outlined text-sm"
-                    style={{ fontVariationSettings: "'FILL' 1", fontSize: '16px' }}
-                  >
-                    star
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            {/* Quick stats */}
-            <div className="hidden lg:grid grid-cols-2 bg-surface-container-low">
-              <div className="p-4 text-center border-r border-outline-variant">
-                <p className="font-body-sm text-secondary text-xs">Total SKUs</p>
-                <p className="font-number-data font-bold text-primary mt-1">1,248</p>
-              </div>
-              <div className="p-4 text-center">
-                <p className="font-body-sm text-secondary text-xs">Monthly Sales</p>
-                <p className="font-number-data font-bold text-primary mt-1">₹2.1L</p>
-              </div>
             </div>
           </section>
 
@@ -292,7 +264,9 @@ export default function Profile() {
                   <button
                     key={item.label}
                     onClick={() => handleItemClick(item.label)}
-                    className="w-full flex items-center h-row-height-min px-4 bahi-khata-spine hover:bg-surface-variant transition-colors group"
+                    disabled={item.label !== 'Shop Settings'}
+                    title={item.label !== 'Shop Settings' ? 'Coming soon' : undefined}
+                    className="w-full flex items-center h-row-height-min px-4 bahi-khata-spine hover:bg-surface-variant transition-colors group disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <span className="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">
                       {item.icon}
@@ -324,18 +298,19 @@ export default function Profile() {
                     key={pref.label}
                     className="flex items-center h-row-height-min px-4 bahi-khata-spine hover:bg-surface-variant transition-colors cursor-pointer"
                   >
+                    <input type="checkbox" className="sr-only" checked={preferences[pref.label] ?? pref.checked} onChange={() => togglePreference(pref.label, pref.checked)} />
                     <span className="material-symbols-outlined text-secondary">notifications</span>
                     <span className="ml-4 flex-grow font-body-md text-on-surface text-sm md:text-base">
                       {pref.label}
                     </span>
                     <div
                       className={`relative w-11 h-6 rounded-full transition-colors ${
-                        pref.checked ? 'bg-primary' : 'bg-outline-variant'
+                        (preferences[pref.label] ?? pref.checked) ? 'bg-primary' : 'bg-outline-variant'
                       }`}
                     >
                       <div
                         className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${
-                          pref.checked ? 'left-6' : 'left-1'
+                          (preferences[pref.label] ?? pref.checked) ? 'left-6' : 'left-1'
                         }`}
                       />
                     </div>
@@ -354,7 +329,7 @@ export default function Profile() {
                 Logout
               </button>
               <p className="text-center font-body-sm text-outline text-xs">
-                App Version 2.4.1-stable
+                StockPilot
               </p>
             </div>
           </div>
