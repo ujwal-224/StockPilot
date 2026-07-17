@@ -5,7 +5,7 @@ const TOKEN_KEY = 'stockpilot_token'
 
 export interface Session {
   user: { id: string; name: string; email: string }
-  shop: { id: string; name: string }
+  shop: { id: string; name: string; profileCompleted: boolean }
   membership: { id: string; role: 'OWNER' | 'MANAGER' | 'WORKER' }
 }
 
@@ -40,6 +40,8 @@ export const signUp = async (data: {
   password: string
   shopName?: string
   invitationCode?: string
+  phone?: string
+  businessType?: string
 }) => (await axios.post<AuthResponse>(`${API_URL}/api/auth/signup`, data)).data
 
 export const getSession = async () =>

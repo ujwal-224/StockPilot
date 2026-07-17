@@ -28,14 +28,21 @@ export default function SignIn({ onShowSignUp }: { onShowSignUp: () => void }) {
       <form onSubmit={submit} className="space-y-4">
         <AuthInput label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" />
         <AuthInput label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" />
-        {error && <p className="text-sm text-error">{error}</p>}
-        <button disabled={loading} className="w-full h-12 rounded-lg bg-primary text-white font-semibold disabled:opacity-60">
-          {loading ? 'Signing in…' : 'Sign in'}
+        {error && <p className="text-sm text-error font-medium">{error}</p>}
+        <button disabled={loading} className="w-full h-12 rounded-lg bg-primary hover:bg-brand-maroon text-white font-semibold shadow-sm hover:shadow-md disabled:opacity-60 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2">
+          {loading ? (
+            <>
+              <span className="material-symbols-outlined animate-spin text-xl">sync</span>
+              Signing in…
+            </>
+          ) : (
+            'Sign in'
+          )}
         </button>
       </form>
       <p className="text-center text-sm text-on-surface-variant mt-5">
         New to StockPilot?{' '}
-        <button onClick={onShowSignUp} className="text-primary font-semibold underline">Create an account</button>
+        <button onClick={onShowSignUp} className="text-primary font-bold hover:underline">Create an account</button>
       </p>
     </AuthShell>
   )
@@ -43,12 +50,39 @@ export default function SignIn({ onShowSignUp }: { onShowSignUp: () => void }) {
 
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-ledger-background flex items-center justify-center p-5">
-      <section className="w-full max-w-md bg-ledger-surface hairline-border bahi-spine rounded-card p-6 md:p-8 shadow-sm">
-        <div className="text-center mb-7">
-          <img src="/stockpilot-logo.png" alt="StockPilot" className="h-16 mx-auto mb-3" />
-          <h1 className="font-headline-lg text-2xl text-primary">{title}</h1>
-          <p className="font-body-sm text-sm text-on-surface-variant mt-1">{subtitle}</p>
+    <main className="min-h-screen bg-ledger-paper flex items-center justify-center p-5 select-none transition-colors duration-300">
+      <section className="w-full max-w-md bg-ledger-surface border border-ledger-hairline bahi-spine rounded-card p-6 md:p-7 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <div className="text-center mb-4">
+          {/* Enhanced Branding Section with Cropped Icon and Large Name */}
+          <div className="flex flex-col items-center mb-4">
+            <div
+              className="relative group transition-transform duration-500 ease-out transform hover:scale-105"
+              style={{
+                width: 60,
+                height: 60,
+                backgroundImage: 'url(/stockpilot-logo.png)',
+                backgroundSize: '410% auto',
+                backgroundPosition: '5% 50%',
+                backgroundRepeat: 'no-repeat',
+              }}
+              aria-hidden="true"
+            />
+            <span
+              className="mt-2.5 tracking-wide select-none"
+              style={{
+                color: '#7B1D2A',
+                fontFamily: 'Georgia, serif',
+                fontWeight: 700,
+                fontSize: '28px',
+                lineHeight: 1,
+              }}
+            >
+              StockPilot
+            </span>
+          </div>
+
+          <h1 className="font-headline-md text-xl text-primary font-bold">{title}</h1>
+          <p className="font-body-sm text-sm text-on-surface-variant mt-1 leading-relaxed">{subtitle}</p>
         </div>
         {children}
       </section>
@@ -57,7 +91,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
 }
 
 export function AuthInput({ label, value, onChange, ...props }: {
-  label: string; value: string; onChange: (value: string) => void; type?: string; autoComplete?: string
+  label: string; value: string; onChange: (value: string) => void; type?: string; autoComplete?: string; required?: boolean
 }) {
   const [showPassword, setShowPassword] = useState(false)
   const isPassword = props.type === 'password'
@@ -66,9 +100,9 @@ export function AuthInput({ label, value, onChange, ...props }: {
     <label className="block">
       <span className="block text-sm font-semibold text-on-surface mb-1.5">{label}</span>
       <div className="relative">
-        <input {...props} type={isPassword && showPassword ? 'text' : props.type} required value={value}
+        <input {...props} type={isPassword && showPassword ? 'text' : props.type} required={props.required !== false} value={value}
           onChange={(event) => onChange(event.target.value)}
-          className={`w-full h-12 px-3 rounded-lg bg-surface-container-low border border-outline-variant focus:border-primary focus:outline-none ${isPassword ? 'pr-12' : ''}`} />
+          className={`w-full h-12 px-3 rounded-lg bg-surface-container-low border border-outline-variant focus:border-primary focus:outline-none transition-colors duration-150 ${isPassword ? 'pr-12' : ''}`} />
         {isPassword && (
           <button type="button" onClick={() => setShowPassword((visible) => !visible)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}

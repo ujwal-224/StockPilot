@@ -10,6 +10,7 @@ import Transactions from './pages/Transactions'
 import Team         from './pages/Team'
 import SignIn       from './pages/SignIn'
 import SignUp       from './pages/SignUp'
+import ProfileSetup from './pages/ProfileSetup'
 import type { PageId } from './types'
 import { useAuth } from './context/AuthContext'
 
@@ -55,6 +56,11 @@ function App() {
     return pathname === '/signup'
       ? <SignUp onShowSignIn={() => navigateAuth('/signin')} />
       : <SignIn onShowSignUp={() => navigateAuth('/signup')} />
+  }
+
+  // Onboarding route protection
+  if (!session.shop.profileCompleted) {
+    return <ProfileSetup />
   }
 
   return (

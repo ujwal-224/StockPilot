@@ -16,6 +16,7 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (data: Parameters<typeof requestSignUp>[0]) => Promise<void>
   signOut: () => void
+  refreshSession: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -56,8 +57,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.history.replaceState(null, '', '/signin')
   }
 
+  const refreshSession = async () => {
+    try {
+      const data = await getSession()
+      setSession(data)
+    } catch (err) {
+      console.error('Failed to refresh session:', err)
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, loading, signIn, signUp, signOut, refreshSession }}>
       {children}
     </AuthContext.Provider>
   )
