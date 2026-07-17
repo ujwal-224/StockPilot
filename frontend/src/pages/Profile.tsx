@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import { getShopProfile, updateShopProfile, type ShopProfile } from '../services/shopService'
+import WhatsAppIntegration from '../components/WhatsAppIntegration'
 
 const BUSINESS_TYPES = [
   'Kirana Store',
@@ -46,7 +47,7 @@ export default function Profile() {
     try { return JSON.parse(localStorage.getItem('notification_preferences') || '{}') }
     catch { return {} }
   })
-  const [activeSection, setActiveSection] = useState<'overview' | 'shop-settings'>('overview')
+  const [activeSection, setActiveSection] = useState<'overview' | 'shop-settings' | 'whatsapp'>('overview')
   const [shop, setShop] = useState<ShopProfile | null>(null)
   
   // Shop Settings form state
@@ -170,6 +171,8 @@ export default function Profile() {
   const handleItemClick = (label: string) => {
     if (label === 'Shop Settings') {
       setActiveSection('shop-settings')
+    } else if (label === 'WhatsApp Integration') {
+      setActiveSection('whatsapp')
     }
   }
 
@@ -264,8 +267,8 @@ export default function Profile() {
                   <button
                     key={item.label}
                     onClick={() => handleItemClick(item.label)}
-                    disabled={item.label !== 'Shop Settings'}
-                    title={item.label !== 'Shop Settings' ? 'Coming soon' : undefined}
+                    disabled={!['Shop Settings', 'WhatsApp Integration'].includes(item.label)}
+                    title={!['Shop Settings', 'WhatsApp Integration'].includes(item.label) ? 'Coming soon' : undefined}
                     className="w-full flex items-center h-row-height-min px-4 bahi-khata-spine hover:bg-surface-variant transition-colors group disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <span className="material-symbols-outlined text-secondary group-hover:text-primary transition-colors">
@@ -334,6 +337,8 @@ export default function Profile() {
             </div>
           </div>
         </div>
+      ) : activeSection === 'whatsapp' ? (
+        <WhatsAppIntegration onBack={() => setActiveSection('overview')} />
       ) : (
         /* SHOP SETTINGS FORM TAB */
         <div className="space-y-6 animate-fade-in">

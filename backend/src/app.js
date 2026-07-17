@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth.routes.js";
 import teamRoutes from "./routes/team.routes.js";
 import shopRoutes from "./routes/shop.routes.js";
 import memoryRoutes from "./routes/memory.routes.js";
+import whatsappRoutes from "./routes/whatsapp.routes.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -22,7 +23,7 @@ const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5173")
   .split(",")
   .map((origin) => origin.trim());
 app.use(cors({ origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)) }));
-app.use(express.json({ limit: "256kb" }));
+app.use(express.json({ limit: "256kb", verify: (req, res, buffer) => { req.rawBody = buffer; } }));
 app.use(express.urlencoded({ extended: true, limit: "256kb" }));
 
 // ===============================
@@ -47,6 +48,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/team", teamRoutes);
 app.use("/api/shop", shopRoutes);
 app.use("/api/memory", memoryRoutes);
+app.use("/api/whatsapp", whatsappRoutes);
 
 // ===============================
 // Global Error Handler
