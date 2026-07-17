@@ -9,6 +9,7 @@ import analyticsRoutes from "./routes/analytics.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import teamRoutes from "./routes/team.routes.js";
+import shopRoutes from "./routes/shop.routes.js";
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/team", teamRoutes);
+app.use("/api/shop", shopRoutes);
 
 // ===============================
 // Global Error Handler

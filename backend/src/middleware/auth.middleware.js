@@ -20,7 +20,7 @@ export const authenticate = async (req, res, next) => {
       user: payload.userId,
       shop: payload.shopId,
       status: "ACTIVE",
-    }).populate("user", "name email").populate("shop", "name");
+    }).populate("user", "name email").populate("shop");
 
     if (!membership) {
       return res.status(401).json({ success: false, message: "Session is no longer active" });

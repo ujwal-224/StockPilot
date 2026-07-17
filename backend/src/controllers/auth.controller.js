@@ -19,7 +19,11 @@ function publicSession(membership) {
       name: membership.user.name,
       email: membership.user.email,
     },
-    shop: { id: membership.shop._id, name: membership.shop.name },
+    shop: {
+      id: membership.shop._id,
+      name: membership.shop.name,
+      profileCompleted: membership.shop.profileCompleted ?? false,
+    },
     membership: { id: membership._id, role: membership.role },
   };
 }
@@ -43,7 +47,7 @@ export const signup = async (req, res, next) => {
   let createdMembership;
 
   try {
-    const { name, password, shopName, invitationCode } = req.body;
+    const { name, password, shopName, invitationCode, phone, businessType } = req.body;
     const email = normalizeEmail(req.body.email);
 
     if (!process.env.JWT_SECRET) {
@@ -86,7 +90,12 @@ export const signup = async (req, res, next) => {
     if (invitation) {
       createdShop = await Shop.findById(invitation.shop);
     } else {
-      createdShop = await Shop.create({ name: shopName.trim(), owner: createdUser._id });
+      createdShop = await Shop.create({
+        name: shopName.trim(),
+        owner: createdUser._id,
+        phone: phone ? String(phone).trim() : undefined,
+        businessType: businessType ? String(businessType).trim() : undefined,
+      });
     }
 
     const membership = await Membership.create({
@@ -109,7 +118,7 @@ export const signup = async (req, res, next) => {
     }
 
     await membership.populate("user", "name email");
-    await membership.populate("shop", "name");
+    await membership.populate("shop");
 
     return res.status(201).json({
       success: true,
@@ -139,7 +148,7 @@ export const signin = async (req, res, next) => {
 
     const membership = await Membership.findOne({ user: user._id, status: "ACTIVE" })
       .populate("user", "name email")
-      .populate("shop", "name");
+      .populate("shop");
 
     if (!membership) {
       return res.status(403).json({ success: false, message: "No active shop membership was found" });
