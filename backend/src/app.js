@@ -10,6 +10,7 @@ import aiRoutes from "./routes/ai.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import teamRoutes from "./routes/team.routes.js";
 import shopRoutes from "./routes/shop.routes.js";
+import memoryRoutes from "./routes/memory.routes.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -45,6 +46,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/team", teamRoutes);
 app.use("/api/shop", shopRoutes);
+app.use("/api/memory", memoryRoutes);
 
 // ===============================
 // Global Error Handler
