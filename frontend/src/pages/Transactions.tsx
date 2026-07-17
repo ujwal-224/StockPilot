@@ -18,33 +18,51 @@ export default function Transactions() {
   const [error, setError] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<TransactionFilter>('ALL')
+  const [page, setPage] = useState(1)
+  const [pages, setPages] = useState(1)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [counts, setCounts] = useState({ SALE: 0, PURCHASE: 0, ADJUSTMENT: 0 })
 
-  const fetchTransactions = () => {
-    getTransactions()
+  const fetchTransactions = (requestedPage = 1) => {
+    if (requestedPage > 1) setLoadingMore(true)
+    getTransactions(requestedPage)
       .then((res) => {
-        setTransactions(res.data)
+        setTransactions((current) => requestedPage === 1 ? res.data : [...current, ...res.data])
+        setPage(res.page)
+        setPages(res.pages)
+        setCounts({ SALE: res.counts.SALE || 0, PURCHASE: res.counts.PURCHASE || 0, ADJUSTMENT: res.counts.ADJUSTMENT || 0 })
         setLoading(false)
       })
       .catch((err) => {
         console.error('Error fetching transactions:', err)
         setError(true)
         setLoading(false)
+        setLoadingMore(false)
       })
+      .finally(() => setLoadingMore(false))
   }
 
   useEffect(() => {
-    fetchTransactions()
+    getTransactions()
+      .then((res) => {
+        setTransactions(res.data)
+        setPage(res.page)
+        setPages(res.pages)
+        setCounts({ SALE: res.counts.SALE || 0, PURCHASE: res.counts.PURCHASE || 0, ADJUSTMENT: res.counts.ADJUSTMENT || 0 })
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false))
   }, [])
 
   // Calculate count metrics dynamically from transactions array
-  const salesCount = useMemo(() => transactions.filter((t) => t.type === 'SALE').length, [transactions])
-  const purchasesCount = useMemo(() => transactions.filter((t) => t.type === 'PURCHASE').length, [transactions])
-  const adjustmentsCount = useMemo(() => transactions.filter((t) => t.type === 'ADJUSTMENT').length, [transactions])
+  const salesCount = counts.SALE
+  const purchasesCount = counts.PURCHASE
+  const adjustmentsCount = counts.ADJUSTMENT
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t) => {
       // 1. Search Query Match
-      const productName = t.product ? t.product.name.toLowerCase() : 'unknown product'
+      const productName = (t.product?.name || t.productSnapshot?.name || 'unknown product').toLowerCase()
       const type = t.type.toLowerCase()
       const query = searchQuery.toLowerCase()
       const matchSearch = productName.includes(query) || type.includes(query)
@@ -73,6 +91,9 @@ export default function Transactions() {
       hour12: true,
     })
   }
+
+  const getProductName = (transaction: TransactionRecord) => transaction.product?.name || transaction.productSnapshot?.name || 'Deleted Product'
+  const getProductUnit = (transaction: TransactionRecord) => transaction.product?.unit || transaction.productSnapshot?.unit || ''
 
   if (loading) {
     return <LoadingCard message="Loading transactions ledger..." fullPage={true} />
@@ -160,7 +181,7 @@ export default function Transactions() {
                 <div className="flex justify-between items-start">
                   <div className="min-w-0 flex-grow">
                     <h4 className="font-bold text-on-surface text-base truncate">
-                      {t.product ? t.product.name : <span className="text-secondary italic">Deleted Product</span>}
+                      {getProductName(t)}
                     </h4>
                     <span className="text-xs text-secondary block mt-0.5">{formatDateTime(t.createdAt)}</span>
                   </div>
@@ -171,7 +192,7 @@ export default function Transactions() {
                   <div>
                     <span className="block text-secondary mb-0.5">Qty</span>
                     <span className="font-number-data text-on-surface font-semibold">
-                      {t.quantity} {t.product?.unit || ''}
+                      {t.quantity} {getProductUnit(t)}
                     </span>
                   </div>
                   <div>
@@ -211,13 +232,13 @@ export default function Transactions() {
                 {sortedTransactions.map((t) => (
                   <tr key={t._id} className="hover:bg-surface-container-high transition-colors">
                     <td className="px-6 py-4 font-bold text-on-surface">
-                      {t.product ? t.product.name : <span className="text-secondary italic">Deleted Product</span>}
+                      {getProductName(t)}
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge type={t.type} />
                     </td>
                     <td className="px-6 py-4 text-right font-number-data text-on-surface">
-                      {t.quantity} {t.product?.unit || ''}
+                      {t.quantity} {getProductUnit(t)}
                     </td>
                     <td className="px-6 py-4 text-right font-number-data text-secondary">
                       {t.previousStock}
@@ -237,6 +258,11 @@ export default function Transactions() {
             </table>
           </div>
         </>
+      )}
+      {page < pages && (
+        <button disabled={loadingMore} onClick={() => fetchTransactions(page + 1)} className="mx-auto block px-5 py-2.5 rounded-lg border border-primary text-primary font-semibold disabled:opacity-50">
+          {loadingMore ? 'Loading…' : 'Load more transactions'}
+        </button>
       )}
     </main>
   )

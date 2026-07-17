@@ -147,6 +147,7 @@ export const signin = async (req, res, next) => {
     }
 
     const membership = await Membership.findOne({ user: user._id, status: "ACTIVE" })
+      .sort({ createdAt: 1 })
       .populate("user", "name email")
       .populate("shop");
 

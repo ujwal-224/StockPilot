@@ -27,6 +27,7 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: true,
       default: 0,
+      min: 0,
     },
     unit: {
       type: String,
@@ -36,6 +37,7 @@ const productSchema = new mongoose.Schema(
     threshold: {
       type: Number,
       default: 10,
+      min: 0,
     },
     image: {
       type: String,
@@ -46,6 +48,8 @@ const productSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+productSchema.index({ shop: 1, createdAt: -1 });
 
 const Product = mongoose.model('Product', productSchema);
 

@@ -1,6 +1,7 @@
 import type { AppNotification, BackendProduct, TransactionRecord } from '../types'
 
 const LOCAL_STORAGE_KEY = 'app_notifications'
+const MAX_NOTIFICATIONS = 200
 
 export function getNotifications(): AppNotification[] {
   try {
@@ -11,7 +12,7 @@ export function getNotifications(): AppNotification[] {
 }
 
 export function saveNotifications(notifications: AppNotification[]) {
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(notifications))
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(notifications.slice(0, MAX_NOTIFICATIONS)))
   window.dispatchEvent(new Event('notifications-updated'))
 }
 
@@ -48,6 +49,7 @@ export function markNotificationsAsRead(ids: string[]) {
 
 export function syncWithBackend(products: BackendProduct[], transactions: TransactionRecord[]) {
   const list = getNotifications()
+  const ids = new Set(list.map((notification) => notification.id))
   let changed = false
 
   const ensureNotification = (
@@ -58,7 +60,7 @@ export function syncWithBackend(products: BackendProduct[], transactions: Transa
     icon: string,
     timestamp: number
   ) => {
-    if (!list.some((n) => n.id === id)) {
+    if (!ids.has(id)) {
       list.push({
         id,
         title,
@@ -69,6 +71,7 @@ export function syncWithBackend(products: BackendProduct[], transactions: Transa
         type,
       })
       changed = true
+      ids.add(id)
     }
   }
 

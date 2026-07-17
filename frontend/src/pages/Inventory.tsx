@@ -188,6 +188,12 @@ export default function Inventory() {
 
   const handleTransactionSave = (e: React.FormEvent) => {
     e.preventDefault()
+    const quantity = Number(transactionForm.quantity)
+    const minimum = transactionForm.type === 'ADJUSTMENT' ? 0 : Number.EPSILON
+    if (!transactionForm.productId || !Number.isFinite(quantity) || quantity < minimum) {
+      toast.error(transactionForm.type === 'ADJUSTMENT' ? 'Stock must be zero or greater' : 'Quantity must be greater than zero')
+      return
+    }
     const product = allItems.find((p) => p.id === transactionForm.productId)
     const productName = product ? product.name : 'Unknown Product'
     const productUnit = product ? ` ${product.unit}` : ''
@@ -201,8 +207,7 @@ export default function Inventory() {
       .then((res) => {
         toast.success("Transaction recorded successfully")
         
-        const newTrans = res.data
-        const quantity = Number(transactionForm.quantity)
+        const newTrans = res.data.transaction
         const type = transactionForm.type as 'SALE' | 'PURCHASE' | 'ADJUSTMENT'
         
         let notifTitle = ''
@@ -357,7 +362,7 @@ export default function Inventory() {
       })
       .catch((err) => {
         console.error('Error deleting product:', err)
-        toast.error("Failed to delete product")
+        toast.error(err.response?.data?.message || "Failed to delete product")
       })
   }
 

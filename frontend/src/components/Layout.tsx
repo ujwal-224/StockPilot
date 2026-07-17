@@ -1,10 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import type { PageId, AppNotification } from '../types'
-import { getProducts } from '../services/productService'
-import { getTransactions } from '../services/transactionService'
 import {
   getNotifications,
-  syncWithBackend,
   markAllAsRead,
   getNotifIconColor
 } from '../services/notificationService'
@@ -28,6 +25,7 @@ const PAGE_META: Record<PageId, { title: string; subtitle?: string }> = {
   analytics:    { title: 'Analytics' },
   team:         { title: 'Team',              subtitle: 'Workers & access' },
   profile:      { title: 'Profile',            subtitle: 'Settings & Account' },
+  'profile-setup': { title: 'Shop setup',       subtitle: 'Complete your profile' },
 }
 
 function getGreeting(name: string) {
@@ -183,26 +181,13 @@ export default function Layout({ currentPage, setPage, children }: LayoutProps) 
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
-  const syncNotifications = () => {
-    Promise.all([getProducts(), getTransactions()])
-      .then(([prodRes, transRes]) => {
-        syncWithBackend(prodRes.data, transRes.data)
-        setNotifications(getNotifications())
-      })
-      .catch((err) => {
-        console.error('Error syncing notifications:', err)
-      })
-  }
-
   useEffect(() => {
-    syncNotifications()
-
     const handleUpdate = () => {
       setNotifications(getNotifications())
     }
     window.addEventListener('notifications-updated', handleUpdate)
     return () => window.removeEventListener('notifications-updated', handleUpdate)
-  }, [currentPage])
+  }, [])
 
   useEffect(() => {
     if (prevOpenRef.current && !isNotifOpen && notifications.length > 0) {
