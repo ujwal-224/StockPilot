@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
 import Product from "../models/Product.js";
+import { searchMemory, saveMemory, listMemories } from "../services/mem0.service.js";
 
 // ─── Inventory Summary Builder ────────────────────────────────────────────────
 
@@ -31,7 +32,14 @@ function buildInventorySummary(products) {
 
 // ─── System Prompt Builder ────────────────────────────────────────────────────
 
-function buildSystemPrompt(inventorySummary) {
+function buildSystemPrompt(inventorySummary, businessMemories = []) {
+  const memoriesSection =
+    businessMemories.length > 0
+      ? `--- BUSINESS MEMORY (remembered preferences & rules) ---
+${businessMemories.map((m, i) => `${i + 1}. ${m.memory}`).join("\n")}
+--- END OF BUSINESS MEMORY ---`
+      : "";
+
   return `You are StockPilot AI, an intelligent inventory assistant built for Indian kirana store owners.
 
 Your primary role is to help owners manage their store inventory by answering questions about:
@@ -61,11 +69,15 @@ You may also answer general business questions such as:
 
 If the user asks something completely unrelated to business (movies, sports, politics, celebrities, jokes, etc.), politely explain that you are designed to assist with inventory and retail business management.
 
+${memoriesSection}
+
 --- CURRENT INVENTORY DATA ---
 ${inventorySummary}
 --- END OF INVENTORY DATA ---
 
 Use the inventory data above whenever answering inventory questions.
+
+Use the business memory above to personalise your answers with known preferences, suppliers, restocking rules, and store information.
 
 Never invent stock quantities or product names.
 
@@ -74,7 +86,45 @@ If information is unavailable, clearly state that it is not present in the inven
 Always provide practical recommendations whenever possible.`;
 }
 
-// ─── Controller ───────────────────────────────────────────────────────────────
+// ─── Memory Worth Saving Heuristic ────────────────────────────────────────────
+// Checks if a user message contains long-term business information worth storing.
+// Avoids an extra Groq call to keep latency low.
+
+const MEMORY_KEYWORDS = [
+  "supplier", "vendor", "wholesaler", "distributor",
+  "reorder", "restock", "order when", "buy when", "threshold",
+  "closed", "holiday", "sunday", "open on",
+  "prefer", "preference", "always", "never",
+  "my shop", "our shop", "we sell", "mainly sell", "specialise", "specialize",
+  "reminder", "notify me", "remind me",
+  "customer", "regular", "clients",
+  "festival", "season", "bulk",
+  "wholesale price", "buying price", "margin",
+];
+
+function isWorthSaving(message) {
+  const lower = message.toLowerCase();
+  // Must be at least 15 chars (not a greeting/one-word reply)
+  if (lower.trim().length < 15) return false;
+  // Skip pure questions
+  if (lower.trim().endsWith("?") && !MEMORY_KEYWORDS.some((kw) => lower.includes(kw))) return false;
+  // Save if it contains a known business keyword
+  return MEMORY_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+function inferCategory(message) {
+  const lower = message.toLowerCase();
+  if (["supplier", "vendor", "wholesaler", "distributor"].some((k) => lower.includes(k))) return "Supplier";
+  if (["reorder", "restock", "order when", "buy when", "threshold"].some((k) => lower.includes(k))) return "Restocking Rule";
+  if (["closed", "holiday", "sunday", "open on", "timing"].some((k) => lower.includes(k))) return "Store Information";
+  if (["prefer", "preference", "always", "never", "summary"].some((k) => lower.includes(k))) return "Business Preference";
+  if (["reminder", "notify me", "remind me"].some((k) => lower.includes(k))) return "Reminder";
+  if (["customer", "regular", "clients"].some((k) => lower.includes(k))) return "Customer Preference";
+  if (["my shop", "our shop", "we sell", "mainly sell"].some((k) => lower.includes(k))) return "Store Information";
+  return "General Note";
+}
+
+// ─── Chat Controller ──────────────────────────────────────────────────────────
 
 export const chat = async (req, res, next) => {
   try {
@@ -97,19 +147,25 @@ export const chat = async (req, res, next) => {
       });
     }
 
-    // 1. Fetch all products from MongoDB
+    const shopId = req.auth.shopId;
+    const userId = req.auth.userId;
+
+    // Step 1: Search Mem0 for relevant business memories
+    const businessMemories = await searchMemory(shopId, message.trim());
+
+    // Step 2: Fetch all products from MongoDB
     const products = await Product.find(
-      { shop: req.auth.shopId },
+      { shop: shopId },
       "name category stock threshold unit price"
     ).sort({ stock: 1 }).limit(500).lean();
 
-    // 2. Build readable inventory summary
+    // Step 3: Build readable inventory summary
     const inventorySummary = buildInventorySummary(products);
 
-    // 3. Build system prompt with inventory context
-    const systemPrompt = buildSystemPrompt(inventorySummary);
+    // Step 4: Build enriched system prompt with memories + inventory
+    const systemPrompt = buildSystemPrompt(inventorySummary, businessMemories);
 
-    // 4. Send system prompt + user message to Groq
+    // Step 5: Send to Groq
     const groq = new Groq({ apiKey });
     const completion = await groq.chat.completions.create({
       model,
@@ -133,7 +189,14 @@ export const chat = async (req, res, next) => {
       throw error;
     }
 
-    // 5. Return the reply exactly as before
+    // Step 6: Auto-save if message contains high-value business information
+    if (isWorthSaving(message.trim())) {
+      const category = inferCategory(message.trim());
+      saveMemory(shopId, userId, message.trim(), category).catch((err) =>
+        console.error("[Mem0] Failed to save memory:", err.message)
+      );
+    }
+
     return res.status(200).json({
       success: true,
       reply,
@@ -233,8 +296,25 @@ export const getInsights = async (req, res, next) => {
       });
     }
 
+    const shopId = req.auth.shopId;
+
+    // Fetch business preferences from Mem0 to personalise insights
+    const allMemories = await listMemories(shopId);
+    const prefMemories = allMemories
+      .filter((m) =>
+        ["Business Preference", "Restocking Rule", "Store Information"].includes(
+          m.metadata?.category
+        )
+      )
+      .slice(0, 5);
+
+    const businessPrefsSection =
+      prefMemories.length > 0
+        ? `\n\nBusiness context from owner preferences:\n${prefMemories.map((m) => `- ${m.memory}`).join("\n")}`
+        : "";
+
     const products = await Product.find(
-      { shop: req.auth.shopId },
+      { shop: shopId },
       "name stock threshold category unit price"
     ).sort({ stock: 1 }).limit(500).lean();
     const inventorySummary = buildInventorySummary(products);
@@ -247,7 +327,7 @@ export const getInsights = async (req, res, next) => {
         { role: "system", content: insightsSystemPrompt },
         {
           role: "user",
-          content: `Analyze this inventory:\n\n${inventorySummary}`,
+          content: `Analyze this inventory:\n\n${inventorySummary}${businessPrefsSection}`,
         },
       ],
     });

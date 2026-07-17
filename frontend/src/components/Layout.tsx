@@ -13,19 +13,21 @@ const NAV_ITEMS: { id: PageId; icon: string; label: string }[] = [
   { id: 'home',         icon: 'home',         label: 'Home'         },
   { id: 'inventory',    icon: 'inventory_2',  label: 'Inventory'    },
   { id: 'transactions', icon: 'receipt_long', label: 'Transactions' },
-  { id: 'analytics',    icon: 'bar_chart',    label: 'Analytics'    },
+  { id: 'analytics',   icon: 'bar_chart',    label: 'Analytics'    },
+  { id: 'memory',      icon: 'psychology',   label: 'Memory'       },
   { id: 'team',         icon: 'groups',       label: 'Team'         },
   { id: 'profile',      icon: 'person',       label: 'Profile'      },
 ]
 
 const PAGE_META: Record<PageId, { title: string; subtitle?: string }> = {
-  home:         { title: 'Ganesh Kirana Store' },
-  inventory:    { title: 'Inventory' },
-  transactions: { title: 'Transactions' },
-  analytics:    { title: 'Analytics' },
-  team:         { title: 'Team',              subtitle: 'Workers & access' },
-  profile:      { title: 'Profile',            subtitle: 'Settings & Account' },
-  'profile-setup': { title: 'Shop setup',       subtitle: 'Complete your profile' },
+  home:            { title: 'Ganesh Kirana Store' },
+  inventory:       { title: 'Inventory' },
+  transactions:    { title: 'Transactions' },
+  analytics:       { title: 'Analytics' },
+  memory:          { title: 'Business Memory', subtitle: 'Shared shop knowledge' },
+  team:            { title: 'Team',            subtitle: 'Workers & access' },
+  profile:         { title: 'Profile',         subtitle: 'Settings & Account' },
+  'profile-setup': { title: 'Shop setup',      subtitle: 'Complete your profile' },
 }
 
 function getGreeting(name: string) {
@@ -71,7 +73,11 @@ interface LayoutProps {
 
 function Sidebar({ currentPage, setPage }: { currentPage: PageId; setPage: (p: PageId) => void }) {
   const { session } = useAuth()
-  const navItems = NAV_ITEMS.filter((item) => item.id !== 'team' || session?.membership.role === 'OWNER')
+  const navItems = NAV_ITEMS.filter((item) => {
+    if (item.id === 'team')   return session?.membership.role === 'OWNER'
+    if (item.id === 'memory') return session?.membership.role === 'OWNER' || session?.membership.role === 'MANAGER'
+    return true
+  })
   return (
     <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-64 bg-ledger-surface border-r border-ledger-hairline z-50">
       {/* Brand – stacked: icon on top, wordmark below */}
@@ -139,7 +145,11 @@ function Sidebar({ currentPage, setPage }: { currentPage: PageId; setPage: (p: P
 
 function BottomNav({ currentPage, setPage }: { currentPage: PageId; setPage: (p: PageId) => void }) {
   const { session } = useAuth()
-  const navItems = NAV_ITEMS.filter((item) => item.id !== 'team' || session?.membership.role === 'OWNER')
+  const navItems = NAV_ITEMS.filter((item) => {
+    if (item.id === 'team')   return session?.membership.role === 'OWNER'
+    if (item.id === 'memory') return session?.membership.role === 'OWNER' || session?.membership.role === 'MANAGER'
+    return true
+  })
   return (
     <nav className="lg:hidden fixed bottom-0 w-full bg-ledger-surface border-t border-ledger-hairline safe-pb flex justify-around items-center h-row-height-min z-50">
       {navItems.map((item) => {

@@ -11,6 +11,7 @@ import Team         from './pages/Team'
 import SignIn       from './pages/SignIn'
 import SignUp       from './pages/SignUp'
 import ProfileSetup from './pages/ProfileSetup'
+import BusinessMemory from './pages/BusinessMemory'
 import type { PageId } from './types'
 import { useAuth } from './context/AuthContext'
 
@@ -23,6 +24,7 @@ function App() {
     if (path === '/analytics') return 'analytics'
     if (path === '/profile') return 'profile'
     if (path === '/team') return 'team'
+    if (path === '/memory') return 'memory'
     return 'home'
   }
 
@@ -72,6 +74,7 @@ function App() {
         {currentPage === 'analytics'    && <Analytics />}
         {currentPage === 'team'         && (session.membership.role === 'OWNER' ? <Team /> : <Home />)}
         {currentPage === 'profile'      && <Profile />}
+        {currentPage === 'memory'       && (['OWNER', 'MANAGER'].includes(session.membership.role) ? <BusinessMemory /> : <Home />)}
       </Layout>
       <AIAssistant />
     </>

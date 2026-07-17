@@ -1,4 +1,4 @@
-export type PageId = 'home' | 'inventory' | 'transactions' | 'analytics' | 'team' | 'profile' | 'profile-setup'
+export type PageId = 'home' | 'inventory' | 'transactions' | 'analytics' | 'team' | 'profile' | 'profile-setup' | 'memory'
 
 export type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock'
 
