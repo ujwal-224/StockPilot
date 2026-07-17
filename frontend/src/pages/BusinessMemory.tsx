@@ -222,8 +222,11 @@ export default function BusinessMemory() {
   }, [])
 
   useEffect(() => {
-    loadMemories()
-  }, [loadMemories])
+    getMemories()
+      .then(setMemories)
+      .catch(() => setError('Failed to load memories. Please try again.'))
+      .finally(() => setLoading(false))
+  }, [])
 
   const handleDelete = async () => {
     if (!toDelete) return

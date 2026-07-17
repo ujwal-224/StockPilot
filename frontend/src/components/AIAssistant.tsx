@@ -306,7 +306,7 @@ function ChatWindow({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const streamRef = useRef<MediaStream | null>(null)
-  const timerIntervalRef = useRef<any>(null)
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Screen size detection for mobile responsiveness
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640)
@@ -421,7 +421,7 @@ function ChatWindow({
       } else {
         throw new Error('API returned unsuccessful response code')
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(progressTimer)
       console.error('Failed to send voice message:', err)
       // Remove temporary placeholder bubble on failure
@@ -429,9 +429,9 @@ function ChatWindow({
 
       let errorMessage = 'Sorry, I couldn\'t process your request right now. Please try again.'
       
-      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+      if (axios.isAxiosError(err) && (err.code === 'ECONNABORTED' || err.message?.includes('timeout'))) {
         errorMessage = 'Connection timed out. Please check your internet connection and try again.'
-      } else if (err.response) {
+      } else if (axios.isAxiosError(err) && err.response) {
         const status = err.response.status
         if (status === 422) {
           errorMessage = 'No speech was detected. Please speak clearly and try again.'
@@ -523,13 +523,13 @@ function ChatWindow({
       timerIntervalRef.current = setInterval(() => {
         setRecordingSeconds(prev => prev + 1)
       }, 1000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to get mic stream:', err)
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop())
         streamRef.current = null
       }
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      if (err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
         addErrorMessage('Microphone permission was denied. Please allow microphone access in your settings.')
       } else {
         addErrorMessage('Could not access microphone. Please check your recording device connection.')

@@ -168,6 +168,29 @@ Ensure you have **Node.js v22.12+** and **npm v10+** installed.
 
 ## 🧱 Production Build Scripts
 
+## WhatsApp Cloud API setup
+
+StockPilot supports linked shopkeeper numbers, inventory queries, confirmed stock changes, and low-stock alerts through Meta's WhatsApp Cloud API.
+
+1. Create a Meta app with WhatsApp enabled and register a business phone number.
+2. Set the webhook callback to `https://YOUR_BACKEND/api/whatsapp/webhook` and subscribe to the `messages` field.
+3. Use the same random value for Meta's webhook verification token and `WHATSAPP_VERIFY_TOKEN`.
+4. Create an approved utility template named `stockpilot_low_stock` with three body variables, for example: `Low stock alert: {{1}} has {{2}} remaining (threshold {{3}}).`
+5. Configure the backend environment:
+
+   ```env
+   WHATSAPP_ACCESS_TOKEN=your_permanent_system_user_token
+   WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
+   WHATSAPP_BUSINESS_NUMBER=919999999999
+   WHATSAPP_VERIFY_TOKEN=your_random_verification_token
+   WHATSAPP_LOW_STOCK_TEMPLATE=stockpilot_low_stock
+   WHATSAPP_TEMPLATE_LANGUAGE=en_US
+   WHATSAPP_GRAPH_VERSION=v23.0
+   META_APP_SECRET=your_meta_app_secret
+   ```
+
+After deployment, each shopkeeper can open **Profile → WhatsApp Integration**, generate a ten-minute code, and send it to the configured business number. Never commit these credentials to Git.
+
 ### Backend
 * `npm start`: Starts the production server.
 * `npm run dev`: Starts Node server with nodemon file watching.
