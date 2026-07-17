@@ -99,7 +99,7 @@ export const chat = async (req, res, next) => {
 
     // 1. Fetch all products from MongoDB
     const products = await Product.find(
-      {},
+      { shop: req.auth.shopId },
       "name category stock threshold unit price"
     ).lean();
 
@@ -234,7 +234,7 @@ export const getInsights = async (req, res, next) => {
     }
 
     const products = await Product.find(
-      {},
+      { shop: req.auth.shopId },
       "name stock threshold category unit price"
     ).lean();
     const inventorySummary = buildInventorySummary(products);

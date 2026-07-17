@@ -1,3 +1,5 @@
+import { useAuth } from '../context/AuthContext'
+
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const STORE_LOGO =
@@ -13,6 +15,7 @@ const settingsItems = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Profile() {
+  const { session, signOut } = useAuth()
   return (
     <main className="flex-grow p-5 md:p-8 lg:p-10 pb-28 lg:pb-10 max-w-3xl mx-auto w-full space-y-6">
 
@@ -28,7 +31,7 @@ export default function Profile() {
                 <img
                   className="w-full h-full rounded-full object-cover"
                   src={STORE_LOGO}
-                  alt="Ganesh Kirana Store logo"
+                  alt={`${session?.shop.name} logo`}
                 />
               </div>
               <div className="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-full border-2 border-surface">
@@ -38,8 +41,8 @@ export default function Profile() {
               </div>
             </div>
 
-            <h2 className="font-headline-sm text-primary mb-1">Ganesh Kirana Store</h2>
-            <p className="font-body-md text-secondary">Owner: Rajesh Kumar Gupta</p>
+            <h2 className="font-headline-sm text-primary mb-1">{session?.shop.name}</h2>
+            <p className="font-body-md text-secondary">{session?.user.name} · {session?.membership.role}</p>
 
             <div className="mt-3 flex flex-wrap gap-2 justify-center">
               <span className="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-xs font-bold rounded-full uppercase tracking-wider">
@@ -141,7 +144,7 @@ export default function Profile() {
 
           {/* Logout */}
           <div className="pt-2 space-y-4">
-            <button className="w-full h-row-height-min border-2 border-secondary text-secondary font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-secondary hover:text-white active:scale-95 transition-all duration-150">
+            <button onClick={signOut} className="w-full h-row-height-min border-2 border-secondary text-secondary font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-secondary hover:text-white active:scale-95 transition-all duration-150">
               <span className="material-symbols-outlined">logout</span>
               Logout
             </button>

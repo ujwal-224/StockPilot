@@ -4,8 +4,8 @@ import Transaction from '../models/Transaction.js';
 export const getAnalyticsData = async (req, res, next) => {
   try {
     // Fetch all products and sale transactions populated with product details
-    const products = await Product.find();
-    const saleTransactions = await Transaction.find({ type: 'SALE' }).populate('product');
+    const products = await Product.find({ shop: req.auth.shopId });
+    const saleTransactions = await Transaction.find({ shop: req.auth.shopId, type: 'SALE' }).populate('product');
 
     // 1. weeklySales & 2. dailySales (last 7 days)
     const today = new Date();

@@ -7,6 +7,8 @@ import transactionRoutes from "./routes/transaction.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
+import authRoutes from "./routes/auth.routes.js";
+import teamRoutes from "./routes/team.routes.js";
 
 const app = express();
 
@@ -30,11 +32,13 @@ app.get("/", (req, res) => {
 // ===============================
 // API Routes
 // ===============================
+app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/team", teamRoutes);
 
 // ===============================
 // Global Error Handler

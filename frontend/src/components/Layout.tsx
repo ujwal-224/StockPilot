@@ -8,6 +8,7 @@ import {
   markAllAsRead,
   getNotifIconColor
 } from '../services/notificationService'
+import { useAuth } from '../context/AuthContext'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -16,6 +17,7 @@ const NAV_ITEMS: { id: PageId; icon: string; label: string }[] = [
   { id: 'inventory',    icon: 'inventory_2',  label: 'Inventory'    },
   { id: 'transactions', icon: 'receipt_long', label: 'Transactions' },
   { id: 'analytics',    icon: 'bar_chart',    label: 'Analytics'    },
+  { id: 'team',         icon: 'groups',       label: 'Team'         },
   { id: 'profile',      icon: 'person',       label: 'Profile'      },
 ]
 
@@ -24,14 +26,15 @@ const PAGE_META: Record<PageId, { title: string; subtitle?: string }> = {
   inventory:    { title: 'Inventory' },
   transactions: { title: 'Transactions' },
   analytics:    { title: 'Analytics' },
+  team:         { title: 'Team',              subtitle: 'Workers & access' },
   profile:      { title: 'Profile',            subtitle: 'Settings & Account' },
 }
 
-function getGreeting() {
+function getGreeting(name: string) {
   const h = new Date().getHours()
-  if (h >= 5  && h < 12) return 'Good morning, Rajesh'
-  if (h >= 12 && h < 17) return 'Good afternoon, Rajesh'
-  return 'Good evening, Rajesh'
+  if (h >= 5  && h < 12) return `Good morning, ${name}`
+  if (h >= 12 && h < 17) return `Good afternoon, ${name}`
+  return `Good evening, ${name}`
 }
 
 const getRelativeTime = (dateStr: string) => {
@@ -69,6 +72,8 @@ interface LayoutProps {
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
 function Sidebar({ currentPage, setPage }: { currentPage: PageId; setPage: (p: PageId) => void }) {
+  const { session } = useAuth()
+  const navItems = NAV_ITEMS.filter((item) => item.id !== 'team' || session?.membership.role === 'OWNER')
   return (
     <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-64 bg-ledger-surface border-r border-ledger-hairline z-50">
       {/* Brand – stacked: icon on top, wordmark below */}
@@ -104,7 +109,7 @@ function Sidebar({ currentPage, setPage }: { currentPage: PageId; setPage: (p: P
 
       {/* Nav links */}
       <nav className="flex-grow p-3 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const active = item.id === currentPage
           return (
             <button
@@ -135,9 +140,11 @@ function Sidebar({ currentPage, setPage }: { currentPage: PageId; setPage: (p: P
 // ─── Bottom Nav ───────────────────────────────────────────────────────────────
 
 function BottomNav({ currentPage, setPage }: { currentPage: PageId; setPage: (p: PageId) => void }) {
+  const { session } = useAuth()
+  const navItems = NAV_ITEMS.filter((item) => item.id !== 'team' || session?.membership.role === 'OWNER')
   return (
     <nav className="lg:hidden fixed bottom-0 w-full bg-ledger-surface border-t border-ledger-hairline safe-pb flex justify-around items-center h-row-height-min z-50">
-      {NAV_ITEMS.map((item) => {
+      {navItems.map((item) => {
         const active = item.id === currentPage
         return (
           <button
@@ -165,8 +172,9 @@ function BottomNav({ currentPage, setPage }: { currentPage: PageId; setPage: (p:
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
 export default function Layout({ currentPage, setPage, children }: LayoutProps) {
-  const meta     = PAGE_META[currentPage]
-  const subtitle = currentPage === 'home' ? getGreeting() : meta.subtitle
+  const { session } = useAuth()
+  const meta = currentPage === 'home' ? { ...PAGE_META.home, title: session?.shop.name || PAGE_META.home.title } : PAGE_META[currentPage]
+  const subtitle = currentPage === 'home' ? getGreeting(session?.user.name || '') : meta.subtitle
   const showFab  = currentPage === 'home' || currentPage === 'inventory'
 
   const [notifications, setNotifications] = useState<AppNotification[]>(() => getNotifications())
