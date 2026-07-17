@@ -1,4 +1,4 @@
-import { listMemories, deleteMemory } from "../services/mem0.service.js";
+import { listMemories, deleteMemoryVerified } from "../services/mem0.service.js";
 
 // ─── List Memories ────────────────────────────────────────────────────────────
 
@@ -21,7 +21,9 @@ export const getMemories = async (req, res, next) => {
       memories: normalised,
     });
   } catch (error) {
-    return next(error);
+    console.error("[Mem0] getMemories controller error:", error.message);
+    // Return empty list rather than crashing the request
+    return res.status(200).json({ success: true, memories: [] });
   }
 };
 
@@ -30,18 +32,31 @@ export const getMemories = async (req, res, next) => {
 export const removeMemory = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const shopId = req.auth.shopId;
 
     if (!id) {
       return res.status(400).json({ success: false, message: "Memory ID is required" });
     }
 
-    await deleteMemory(id);
+    const result = await deleteMemoryVerified(id, shopId);
 
-    return res.status(200).json({
-      success: true,
-      message: "Memory deleted successfully",
-    });
+    if (!result.success) {
+      if (result.reason === "forbidden") {
+        return res.status(403).json({ success: false, message: "You do not have permission to delete this memory" });
+      }
+      if (result.reason === "not_found") {
+        return res.status(404).json({ success: false, message: "Memory not found" });
+      }
+      if (result.reason === "disabled") {
+        return res.status(503).json({ success: false, message: "Memory service is currently disabled" });
+      }
+      // verification_error / delete_error
+      return res.status(500).json({ success: false, message: "Failed to delete memory" });
+    }
+
+    return res.status(200).json({ success: true, message: "Memory deleted successfully" });
   } catch (error) {
+    console.error("[Mem0] removeMemory controller error:", error.message);
     return next(error);
   }
 };
