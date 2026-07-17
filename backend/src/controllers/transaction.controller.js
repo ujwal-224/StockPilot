@@ -121,7 +121,7 @@ export const getAllTransactions = async (req, res, next) => {
         .lean(),
       Transaction.countDocuments(filter),
       Transaction.aggregate([
-        { $match: filter },
+        { $match: { shop: new mongoose.Types.ObjectId(req.auth.shopId) } },
         { $group: { _id: '$type', count: { $sum: 1 } } },
       ]),
     ]);

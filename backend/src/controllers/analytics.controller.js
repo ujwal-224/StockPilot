@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Transaction from '../models/Transaction.js';
 
 const TIMEZONE = process.env.APP_TIMEZONE || 'Asia/Kolkata';
@@ -15,7 +16,7 @@ export const getAnalyticsData = async (req, res, next) => {
     previousStart.setDate(previousStart.getDate() - 7);
 
     const [result] = await Transaction.aggregate([
-      { $match: { shop: req.auth.shopId, type: 'SALE' } },
+      { $match: { shop: new mongoose.Types.ObjectId(req.auth.shopId), type: 'SALE' } },
       {
         $lookup: {
           from: 'products',
