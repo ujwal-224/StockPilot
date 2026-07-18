@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Transaction from '../models/Transaction.js';
 import { parseTransactionInput, recordInventoryTransaction } from '../services/inventory.service.js';
 
