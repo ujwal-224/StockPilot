@@ -1,174 +1,151 @@
-# StockPilot – AI-Powered Inventory Management Through WhatsApp
+# StockPilot -- AI-Powered Inventory Management Assistant
 
-> **Manage inventory as naturally as sending a WhatsApp message.**
+> **Manage inventory naturally using AI-powered conversations.**
 
-StockPilot is an AI-powered inventory management assistant built specifically for Indian kirana stores and small retailers. Instead of requiring shopkeepers to learn complicated inventory software, StockPilot allows them to simply send natural language messages through WhatsApp, such as:
+StockPilot is an AI-powered inventory management assistant built
+specifically for Indian kirana stores and small retailers.
 
-> **"Sold 5 Maggi packets"**
-> **"Add 20 Coca-Cola bottles"**
+Instead of requiring shopkeepers to learn complicated inventory
+software, StockPilot enables natural language-based inventory
+management, allowing users to interact with the system using simple
+conversational commands.
 
-The AI understands the intent, updates inventory instantly, stores the transaction, and synchronizes everything with a modern analytics dashboard.
+The AI understands user intent, updates inventory, stores transactions,
+and synchronizes everything with a modern analytics dashboard.
 
-Built during a hackathon, StockPilot combines the familiarity of WhatsApp with the intelligence of Large Language Models to create an affordable, intuitive inventory management system for India's small businesses.
+Built during a hackathon, StockPilot combines conversational AI,
+intelligent inventory management, and business analytics to create an
+affordable and intuitive solution for India's small retailers.
 
----
+------------------------------------------------------------------------
 
 # ✨ Why StockPilot?
 
 Small shopkeepers still rely on:
 
-* Handwritten notebooks
-* Memory
-* Paper bills
+-   Handwritten notebooks
+-   Memory
+-   Paper bills
 
 This often results in:
 
-* Lost sales due to incorrect stock information
-* Overstocking and dead inventory
-* Manual calculations
-* Poor visibility into business performance
+-   Lost sales due to incorrect stock information
+-   Overstocking and dead inventory
+-   Manual calculations
+-   Poor visibility into business performance
 
-Existing inventory software exists—but most kirana owners avoid it because it requires:
+Existing inventory software often requires:
 
-* Installing new applications
-* Learning complex interfaces
-* Paying monthly subscription fees
-* Training employees
+-   Installing new applications
+-   Learning complex interfaces
+-   Monthly subscription fees
+-   Staff training
 
-StockPilot removes all these barriers.
+StockPilot is designed to feel as natural as having a conversation,
+removing the complexity of traditional inventory software.
 
-If a shopkeeper already knows how to send a WhatsApp message, they already know how to use StockPilot.
-
----
+------------------------------------------------------------------------
 
 # 🚀 Features
 
-## 📱 WhatsApp-Based Inventory Management
+## 💬 Natural Language Inventory Management
 
-Manage inventory directly through WhatsApp.
+Manage inventory using simple conversational commands.
 
 Examples:
 
-* Sold 5 Maggi packets
-* Add 20 rice bags
-* Purchased 10 soap boxes
-* Reduce sugar by 5
+-   Sold 5 Maggi packets
+-   Add 20 rice bags
+-   Purchased 10 soap boxes
+-   Reduce sugar by 5
 
-No forms.
+Simple, conversational interactions designed for ease of use.
 
-No complicated software.
-
-No learning curve.
-
----
+------------------------------------------------------------------------
 
 ## 🧠 AI-Powered Natural Language Understanding
 
-Instead of relying on rigid commands, StockPilot uses Large Language Models to understand natural conversations.
+The AI understands multiple ways of expressing the same action.
 
-All of these are interpreted correctly:
+Examples:
 
-* Sold 5 rice bags
-* I sold five rice bags
-* Reduce rice by five
-* Five rice bags are sold
+-   Sold 5 rice bags
+-   I sold five rice bags
+-   Reduce rice by five
+-   Five rice bags are sold
 
 The AI extracts:
 
-* Intent
-* Product
-* Quantity
-* Action
+-   Intent
+-   Product
+-   Quantity
+-   Action
 
 and updates inventory automatically.
 
----
+------------------------------------------------------------------------
 
 ## 🧠 Persistent Conversation Memory (Mem0)
 
-Traditional AI forgets previous conversations.
+Mem0 allows the assistant to remember previous interactions, enabling
+natural follow-up conversations and better context understanding.
 
-Example:
-
-User:
-
-> Add Pepsi
-
-AI:
-
-> Done.
-
-User:
-
-> How many are left?
-
-Without memory, the AI doesn't know what "they" refers to.
-
-Mem0 stores conversation history so the assistant remembers previous products and conversations naturally.
-
----
+------------------------------------------------------------------------
 
 ## ⚡ Fast AI Processing with Groq
 
 StockPilot uses Groq for:
 
-* Low latency inference
-* Fast response generation
-* Affordable AI processing
-* Real-time inventory updates
+-   Fast inference
+-   Low latency
+-   Affordable AI processing
+-   Real-time inventory intelligence
 
----
+------------------------------------------------------------------------
 
 ## 📦 Inventory Management
 
-* Add Products
-* Update Stock
-* Delete Products
-* Low Stock Alerts
-* Search Inventory
-* Inventory Status Filters
+-   Add products
+-   Edit products
+-   Delete products
+-   Search inventory
+-   Low stock monitoring
+-   Inventory status filters
 
----
+------------------------------------------------------------------------
 
 ## 📒 Digital Transactions Ledger
 
 Automatically records:
 
-* Sales
-* Purchases
-* Inventory Adjustments
+-   Sales
+-   Purchases
+-   Stock adjustments
 
-Maintains a complete digital ledger inspired by the traditional Bahi-Khata bookkeeping system.
+Inspired by the traditional Bahi-Khata bookkeeping system.
 
----
+------------------------------------------------------------------------
 
 ## 📊 Analytics Dashboard
 
-A synchronized dashboard provides:
+Provides:
 
-* Total Products
-* Low Stock Items
-* Daily Activity
-* Revenue Insights
-* Inventory Analytics
-* Fast-Moving Products
-* Weekly Reports
+-   Total products
+-   Low stock alerts
+-   Revenue overview
+-   Category analytics
+-   Fast-moving products
+-   Weekly reports
 
----
+------------------------------------------------------------------------
 
-# 🏗 Overall Architecture
+# 🏗 Architecture
 
-```
-Shopkeeper
+``` text
+Store Owner
       │
       ▼
- WhatsApp
-      │
-      ▼
-Meta WhatsApp Cloud API
-      │
-      ▼
-Webhook
+StockPilot Interface
       │
       ▼
 Express Backend
@@ -183,67 +160,46 @@ MongoDB Atlas
 React Dashboard
 ```
 
----
+------------------------------------------------------------------------
 
 # 🔄 Workflow
 
-### Example
+User Input
 
-Shopkeeper sends:
-
-```
+``` text
 Sold 5 Maggi packets
 ```
 
-Flow:
+Flow
 
-```
-Shopkeeper
-
-↓
-
-WhatsApp
-
-↓
-
-Meta WhatsApp Cloud API
-
-↓
-
-Webhook
-
-↓
-
+``` text
+User
+   │
+   ▼
+StockPilot
+   │
+   ▼
 Express Backend
-
-↓
-
+   │
+   ▼
 Groq AI
-
-↓
-
+   │
+   ▼
 Intent Extraction
-
-↓
-
+   │
+   ▼
 MongoDB Update
-
-↓
-
+   │
+   ▼
 Dashboard Sync
-
-↓
-
+   │
+   ▼
 AI Confirmation
-
-↓
-
-WhatsApp Reply
 ```
 
-Reply:
+Example Reply
 
-```
+``` text
 Successfully recorded.
 
 5 Maggi packets sold.
@@ -251,53 +207,47 @@ Successfully recorded.
 Remaining Stock: 37
 ```
 
----
+------------------------------------------------------------------------
 
 # 🛠 Technology Stack
 
 ## Frontend
 
-* React
-* TypeScript
-* Vite
-* Tailwind CSS
+-   React
+-   TypeScript
+-   Vite
+-   Tailwind CSS
 
 ## Backend
 
-* Node.js
-* Express.js
+-   Node.js
+-   Express.js
 
 ## Database
 
-* MongoDB Atlas
-* Mongoose
+-   MongoDB Atlas
+-   Mongoose
 
 ## AI
 
-* Groq
-* Mem0
-
-## Communication
-
-* Meta WhatsApp Cloud API
-* Webhooks
+-   Groq
+-   Mem0
 
 ## Authentication
 
-* JWT
+-   JWT
 
 ## Deployment
 
-* Vercel
-* Render
+-   Vercel
+-   Render
 
----
+------------------------------------------------------------------------
 
 # 📁 Project Structure
 
-```
+``` text
 StockPilot/
-│
 ├── backend/
 │   ├── src/
 │   │   ├── config/
@@ -316,110 +266,80 @@ StockPilot/
     │   ├── components/
     │   ├── pages/
     │   ├── services/
-    │   ├── types/
+    │   ├── types.ts
     │   ├── App.tsx
     │   └── index.css
     ├── tailwind.config.js
     └── package.json
 ```
 
----
+------------------------------------------------------------------------
 
 # 🚀 Local Setup
 
 ## Backend
 
-```bash
+``` bash
 cd backend
 npm install
 ```
 
 Create `.env`
 
-```env
+``` env
 PORT=5000
-
 MONGO_URI=your_mongodb_connection
-
 GROQ_API_KEY=your_groq_api_key
-
 GROQ_MODEL=your_groq_model
-
 JWT_SECRET=your_secret
-
 JWT_EXPIRES_IN=7d
-
 CORS_ORIGINS=http://localhost:5173
-
-WHATSAPP_ACCESS_TOKEN=your_access_token
-
-WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
-
-WHATSAPP_BUSINESS_NUMBER=919999999999
-
-WHATSAPP_VERIFY_TOKEN=your_verify_token
-
-WHATSAPP_LOW_STOCK_TEMPLATE=stockpilot_low_stock
-
-WHATSAPP_TEMPLATE_LANGUAGE=en_US
-
-WHATSAPP_GRAPH_VERSION=v23.0
-
-META_APP_SECRET=your_meta_app_secret
 ```
 
-Run backend
+Run
 
-```bash
+``` bash
 npm run dev
 ```
 
----
+------------------------------------------------------------------------
 
 ## Frontend
 
-```bash
+``` bash
 cd frontend
-
 npm install
 ```
 
 Create `.env`
 
-```env
+``` env
 VITE_API_URL=http://localhost:5000
 ```
 
 Run
 
-```bash
+``` bash
 npm run dev
 ```
 
-Open
+Open http://localhost:5173
 
-```
-http://localhost:5173
-```
+------------------------------------------------------------------------
 
----
-
-# ☁ Deployment
+# ☁️ Deployment
 
 ## Backend
 
 Deploy on **Render**
 
-Environment Variables:
+Environment Variables
 
-* MONGO_URI
-* GROQ_API_KEY
-* GROQ_MODEL
-* JWT_SECRET
-* CORS_ORIGINS
-* WhatsApp Cloud API credentials
-
----
+-   MONGO_URI
+-   GROQ_API_KEY
+-   GROQ_MODEL
+-   JWT_SECRET
+-   CORS_ORIGINS
 
 ## Frontend
 
@@ -427,64 +347,65 @@ Deploy on **Vercel**
 
 Environment Variable
 
-```
+``` env
 VITE_API_URL=https://your-render-api-url
 ```
 
----
+------------------------------------------------------------------------
 
 # 💡 Future Scope
 
-* Voice Notes
-* Regional Language Support
-* OCR Bill Scanner
-* Barcode Scanner
-* GST Report Generation
-* AI Sales Prediction
-* Demand Forecasting
-* Supplier Integration
-* Smart Purchase Recommendations
+-   WhatsApp Integration
+-   Voice Notes
+-   Regional Language Support
+-   OCR Bill Scanner
+-   Barcode Scanner
+-   GST Reports
+-   Sales Prediction
+-   Demand Forecasting
+-   Supplier Integration
+-   Smart Purchase Recommendations
 
----
+------------------------------------------------------------------------
 
 # 🎯 Challenges Solved
 
-* WhatsApp Cloud API Integration
-* Webhook Verification
-* Natural Language Processing
-* AI Conversation Memory
-* Real-Time Inventory Synchronization
-* MongoDB Integration
-* Dashboard Synchronization
-
----
+-   AI-powered natural language processing
+-   Inventory synchronization
+-   MongoDB integration
+-   Dashboard synchronization
+-   AI conversation flow
+-   Integretion of Mem0 and Gnani.ai
+------------------------------------------------------------------------
 
 # 🌍 Real-World Impact
 
-StockPilot is designed for:
+Designed for:
 
-* Kirana Stores
-* Grocery Shops
-* Medical Stores
-* Stationery Shops
-* Bakeries
-* Hardware Stores
-* Small Retail Businesses
+-   Kirana Stores
+-   Grocery Stores
+-   Medical Stores
+-   Bakeries
+-   Stationery Shops
+-   Small Retail Businesses
 
----
+------------------------------------------------------------------------
 
 # ❤️ Why StockPilot?
 
-| Traditional Inventory Software | StockPilot             |
-| ------------------------------ | ---------------------- |
-| Requires separate software     | Works through WhatsApp |
-| Complex interface              | Natural conversation   |
-| Employee training              | No training required   |
-| Expensive subscriptions        | Affordable & scalable  |
-| Manual inventory updates       | AI-powered automation  |
+  Traditional Inventory Software   StockPilot
+  -------------------------------- -------------------------------
+  Complex interface                Natural language interactions
+  Employee training                Easy to learn
+  Manual inventory updates         AI-powered automation
+  Limited analytics                Smart business insights
+  Expensive subscriptions          Affordable & scalable
 
----
+------------------------------------------------------------------------
 
 # 👨‍💻 Built During Hackathon
 
-StockPilot demonstrates how conversational AI, persistent memory, and messaging platforms can transform inventory management for millions of small businesses across India by making technology accessible through tools they already use every day.
+StockPilot demonstrates how conversational AI, persistent memory, and
+intelligent analytics can transform inventory management for millions of
+small businesses across India by making inventory management simple,
+intuitive, and accessible.
