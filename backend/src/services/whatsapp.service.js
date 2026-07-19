@@ -1,10 +1,29 @@
 import crypto from 'node:crypto';
+import twilio from 'twilio';
 import WhatsAppMessage from '../models/WhatsAppMessage.js';
 
 const graphVersion = process.env.WHATSAPP_GRAPH_VERSION || 'v23.0';
 
 export function isWhatsAppConfigured() {
-  return Boolean(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
+  return Boolean(
+    (process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID)
+    || (process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_WHATSAPP_NUMBER),
+  );
+}
+
+export function isTwilioConfigured() {
+  return Boolean(process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_WHATSAPP_NUMBER);
+}
+
+export function verifyTwilioSignature(url, params, signature) {
+  if (!process.env.TWILIO_AUTH_TOKEN || !signature) return false;
+  return twilio.validateRequest(process.env.TWILIO_AUTH_TOKEN, signature, url, params);
+}
+
+export function createTwilioReply(message) {
+  const response = new twilio.twiml.MessagingResponse();
+  if (message) response.message(message);
+  return response.toString();
 }
 
 export function verifyWebhookSignature(rawBody, signature) {
