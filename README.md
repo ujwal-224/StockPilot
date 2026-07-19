@@ -1,205 +1,490 @@
-# StockPilot — Kirana Ledger & Analytics Dashboard
+# StockPilot – AI-Powered Inventory Management Through WhatsApp
 
-> A modern, responsive inventory management & predictive analytics dashboard built for Indian kirana store owners. StockPilot blends the warm, traditional aesthetic of the **Bahi-Khata** paper ledger (featuring warm parchment tones, maroon spine accents, and monospace numerical alignment) with cutting-edge technology like Node.js, MongoDB, and Gemini AI.
+> **Manage inventory as naturally as sending a WhatsApp message.**
 
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
-[![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite)](https://vite.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind-3-06B6D4?style=flat-square&logo=tailwindcss)](https://tailwindcss.com)
-[![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=flat-square&logo=node.js)](https://nodejs.org)
-[![Express](https://img.shields.io/badge/Express-4-000000?style=flat-square&logo=express)](https://expressjs.com)
-[![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248?style=flat-square&logo=mongodb)](https://www.mongodb.com)
+StockPilot is an AI-powered inventory management assistant built specifically for Indian kirana stores and small retailers. Instead of requiring shopkeepers to learn complicated inventory software, StockPilot allows them to simply send natural language messages through WhatsApp, such as:
 
----
+> **"Sold 5 Maggi packets"**
+> **"Add 20 Coca-Cola bottles"**
 
-## ✨ Features & Architecture
+The AI understands the intent, updates inventory instantly, stores the transaction, and synchronizes everything with a modern analytics dashboard.
 
-StockPilot is structured as a decoupled monorepo containing a **React Frontend Client** and a **Node.js Express Backend API**.
-
-| Section | What's Inside | Responsive Features |
-|---|---|---|
-| 🏠 **Home Dashboard** | High-level KPI cards (Total Items, Low Stock, Today's Updates), items needing immediate restocking, and recent ledger activities. | Summary grid stacks on mobile; touch-friendly cards for high visual priority. |
-| 📦 **Live Inventory** | Search bar and status pill filters (`All`, `Low Stock`, `Out of Stock`). In-app modals to **Add**, **Edit**, or **Delete** products. | Cards automatically scale down and progress bars adapt dynamically to 320px+ viewports. Modals feature premium blurred, dimmed overlays. |
-| 💸 **Transactions Ledger** | Logging system to record sales, stock adjustments, and wholesale purchases. | Displays as a detailed data table on desktop, and transforms into clean vertical ledger slip-cards on mobile devices. |
-| 📊 **Gemini Analytics** | Weekly revenue chart, category breakdown, fast-moving items, and custom PDF weekly reports. | Dynamic SVG bar chart with hover tooltips adapts seamlessly to container widths. |
-| 👤 **Store Profile** | Digital merchant settings, business hours configuration, and active WhatsApp integrations. | Stacks elements into a beautiful, linear layout on smaller screens. |
+Built during a hackathon, StockPilot combines the familiarity of WhatsApp with the intelligence of Large Language Models to create an affordable, intuitive inventory management system for India's small businesses.
 
 ---
 
-## 🛠 Tech Stack
+# ✨ Why StockPilot?
 
-### Frontend Client
-* **React 19** & **TypeScript 6**
-* **Vite 8** (Ultra-fast HMR Dev Server + Rollup Bundler)
-* **Tailwind CSS 3** (Custom design tokens configuring the traditional Bahi-Khata palette)
-* **React Hot Toast** (Premium notification toasts)
-* State-based local routing (eliminating heavy external dependencies)
+Small shopkeepers still rely on:
 
-### Backend API
-* **Node.js (ES Modules)** & **Express 4**
-* **MongoDB Atlas & Mongoose** (NoSQL schema-based database)
-* **Gemini API** integration (for predictive stock analytics and smart reporting)
-* **Cors** & **Dotenv** configuration
+* Handwritten notebooks
+* Memory
+* Paper bills
+
+This often results in:
+
+* Lost sales due to incorrect stock information
+* Overstocking and dead inventory
+* Manual calculations
+* Poor visibility into business performance
+
+Existing inventory software exists—but most kirana owners avoid it because it requires:
+
+* Installing new applications
+* Learning complex interfaces
+* Paying monthly subscription fees
+* Training employees
+
+StockPilot removes all these barriers.
+
+If a shopkeeper already knows how to send a WhatsApp message, they already know how to use StockPilot.
 
 ---
 
-## 📁 Project Structure
+# 🚀 Features
+
+## 📱 WhatsApp-Based Inventory Management
+
+Manage inventory directly through WhatsApp.
+
+Examples:
+
+* Sold 5 Maggi packets
+* Add 20 rice bags
+* Purchased 10 soap boxes
+* Reduce sugar by 5
+
+No forms.
+
+No complicated software.
+
+No learning curve.
+
+---
+
+## 🧠 AI-Powered Natural Language Understanding
+
+Instead of relying on rigid commands, StockPilot uses Large Language Models to understand natural conversations.
+
+All of these are interpreted correctly:
+
+* Sold 5 rice bags
+* I sold five rice bags
+* Reduce rice by five
+* Five rice bags are sold
+
+The AI extracts:
+
+* Intent
+* Product
+* Quantity
+* Action
+
+and updates inventory automatically.
+
+---
+
+## 🧠 Persistent Conversation Memory (Mem0)
+
+Traditional AI forgets previous conversations.
+
+Example:
+
+User:
+
+> Add Pepsi
+
+AI:
+
+> Done.
+
+User:
+
+> How many are left?
+
+Without memory, the AI doesn't know what "they" refers to.
+
+Mem0 stores conversation history so the assistant remembers previous products and conversations naturally.
+
+---
+
+## ⚡ Fast AI Processing with Groq
+
+StockPilot uses Groq for:
+
+* Low latency inference
+* Fast response generation
+* Affordable AI processing
+* Real-time inventory updates
+
+---
+
+## 📦 Inventory Management
+
+* Add Products
+* Update Stock
+* Delete Products
+* Low Stock Alerts
+* Search Inventory
+* Inventory Status Filters
+
+---
+
+## 📒 Digital Transactions Ledger
+
+Automatically records:
+
+* Sales
+* Purchases
+* Inventory Adjustments
+
+Maintains a complete digital ledger inspired by the traditional Bahi-Khata bookkeeping system.
+
+---
+
+## 📊 Analytics Dashboard
+
+A synchronized dashboard provides:
+
+* Total Products
+* Low Stock Items
+* Daily Activity
+* Revenue Insights
+* Inventory Analytics
+* Fast-Moving Products
+* Weekly Reports
+
+---
+
+# 🏗 Overall Architecture
+
+```
+Shopkeeper
+      │
+      ▼
+ WhatsApp
+      │
+      ▼
+Meta WhatsApp Cloud API
+      │
+      ▼
+Webhook
+      │
+      ▼
+Express Backend
+      │
+      ▼
+Groq AI + Mem0
+      │
+      ▼
+MongoDB Atlas
+      │
+      ▼
+React Dashboard
+```
+
+---
+
+# 🔄 Workflow
+
+### Example
+
+Shopkeeper sends:
+
+```
+Sold 5 Maggi packets
+```
+
+Flow:
+
+```
+Shopkeeper
+
+↓
+
+WhatsApp
+
+↓
+
+Meta WhatsApp Cloud API
+
+↓
+
+Webhook
+
+↓
+
+Express Backend
+
+↓
+
+Groq AI
+
+↓
+
+Intent Extraction
+
+↓
+
+MongoDB Update
+
+↓
+
+Dashboard Sync
+
+↓
+
+AI Confirmation
+
+↓
+
+WhatsApp Reply
+```
+
+Reply:
+
+```
+Successfully recorded.
+
+5 Maggi packets sold.
+
+Remaining Stock: 37
+```
+
+---
+
+# 🛠 Technology Stack
+
+## Frontend
+
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
+
+## Backend
+
+* Node.js
+* Express.js
+
+## Database
+
+* MongoDB Atlas
+* Mongoose
+
+## AI
+
+* Groq
+* Mem0
+
+## Communication
+
+* Meta WhatsApp Cloud API
+* Webhooks
+
+## Authentication
+
+* JWT
+
+## Deployment
+
+* Vercel
+* Render
+
+---
+
+# 📁 Project Structure
 
 ```
 StockPilot/
-├── backend/                       # Express Node.js Server
+│
+├── backend/
 │   ├── src/
-│   │   ├── config/database.js     # MongoDB connection setup
-│   │   ├── controllers/           # API request controllers (Product, Analytics)
-│   │   ├── middleware/            # Error handling & CORS middlewares
-│   │   ├── models/                # Mongoose Database Schemas
-│   │   ├── routes/                # API Endpoints (Products, Transactions)
-│   │   └── server.js              # Application entry point
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   └── server.js
 │   ├── .env.example
 │   └── package.json
 │
-└── frontend/                      # React Vite Client
-    ├── public/                    # Assets & Brand Logos
+└── frontend/
+    ├── public/
     ├── src/
     │   ├── components/
-    │   │   ├── Layout.tsx         # Responsive Sidebar, Header, & Bottom Nav Shell
-    │   │   └── SharedComponents.tsx # Cards, badges, loading, search bar
-    │   ├── pages/                 # Home, Inventory, Transactions, Analytics, Profile
-    │   ├── services/              # API Client fetch calls (Axios)
-    │   ├── types.ts               # Shared TypeScript schemas
-    │   ├── index.css              # Custom parchment typography & accent lines
-    │   └── App.tsx                # Page switching state router
-    ├── tailwind.config.js         # Material Design 3 theme extensions
+    │   ├── pages/
+    │   ├── services/
+    │   ├── types/
+    │   ├── App.tsx
+    │   └── index.css
+    ├── tailwind.config.js
     └── package.json
 ```
 
 ---
 
-## 🚀 Getting Started (Local Setup)
+# 🚀 Local Setup
 
-### Prerequisites
-Ensure you have **Node.js v22.12+** and **npm v10+** installed.
+## Backend
 
----
+```bash
+cd backend
+npm install
+```
 
-### Step 1: Set Up the Backend API
+Create `.env`
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Create a `.env` file in the `backend` folder based on `.env.example`:
-   ```env
-   PORT=5000
-   MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/StockPilot
-   GROQ_API_KEY=your_groq_api_key_here
-   GROQ_MODEL=your_groq_model
-   JWT_SECRET=replace_with_a_long_random_secret
-   JWT_EXPIRES_IN=7d
-   CORS_ORIGINS=http://localhost:5173
-   ```
-4. Start the backend development server:
-   ```bash
-   npm run dev
-   ```
-   The API will boot on **[http://localhost:5000](http://localhost:5000)**.
-   * *Verify by visiting [http://localhost:5000/](http://localhost:5000/) in your browser. You should receive a `"StockPilot Backend Running"` JSON response.*
+```env
+PORT=5000
 
----
+MONGO_URI=your_mongodb_connection
 
-### Step 2: Set Up the Frontend Client
+GROQ_API_KEY=your_groq_api_key
 
-1. Open a new terminal tab and navigate to the frontend directory:
-   ```bash
-   cd ../frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Create a `.env` file in the `frontend` folder:
-   ```env
-   VITE_API_URL=http://localhost:5000
-   ```
-4. Start the frontend client:
-   ```bash
-   npm run dev
-   ```
-5. Open **[http://localhost:5173](http://localhost:5173)** in your browser 🎉
+GROQ_MODEL=your_groq_model
+
+JWT_SECRET=your_secret
+
+JWT_EXPIRES_IN=7d
+
+CORS_ORIGINS=http://localhost:5173
+
+WHATSAPP_ACCESS_TOKEN=your_access_token
+
+WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
+
+WHATSAPP_BUSINESS_NUMBER=919999999999
+
+WHATSAPP_VERIFY_TOKEN=your_verify_token
+
+WHATSAPP_LOW_STOCK_TEMPLATE=stockpilot_low_stock
+
+WHATSAPP_TEMPLATE_LANGUAGE=en_US
+
+WHATSAPP_GRAPH_VERSION=v23.0
+
+META_APP_SECRET=your_meta_app_secret
+```
+
+Run backend
+
+```bash
+npm run dev
+```
 
 ---
 
-## ☁️ Deployment Instructions
+## Frontend
 
-### 1. Deploy the Backend (on [Render.com](https://render.com))
-1. Log in to Render and create a new **Web Service**.
-2. Link your GitHub Repository.
-3. Configure these subdirectory details:
-   * **Root Directory**: `backend` (very important)
-   * **Runtime**: `Node`
-   * **Build Command**: `npm install`
-   * **Start Command**: `npm start`
-4. Add the following **Environment Variables** in the settings tab:
-   * `MONGO_URI` (your MongoDB connection string)
-   * `GROQ_API_KEY` and `GROQ_MODEL` (your Groq credentials)
-   * `JWT_SECRET` (a long random production secret)
-   * `CORS_ORIGINS` (your deployed frontend URL)
-   * `PORT` = `5000` (Render allocates this dynamically, but setting it matches internal configs)
-5. Deploy. You will receive a public API URL (e.g. `https://stockpilot-api.onrender.com`).
+```bash
+cd frontend
 
-### 2. Deploy the Frontend (on [Vercel.com](https://vercel.com))
-1. Log in to Vercel and **Add New Project**.
-2. Link your GitHub Repository.
-3. Configure these directory settings:
-   * **Framework Preset**: `Vite`
-   * **Root Directory**: `frontend` (very important)
-   * **Build Command**: `npm run build`
-   * **Output Directory**: `dist`
-4. Expand **Environment Variables** and add:
-   * **Key**: `VITE_API_URL`
-   * **Value**: `https://stockpilot-api.onrender.com` (your live Render API URL, without a trailing slash)
-5. Click **Deploy**. Vercel will host your static React build and hook it directly to your live backend.
+npm install
+```
+
+Create `.env`
+
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+Run
+
+```bash
+npm run dev
+```
+
+Open
+
+```
+http://localhost:5173
+```
 
 ---
 
-## 🧱 Production Build Scripts
+# ☁ Deployment
 
-## WhatsApp Cloud API setup
+## Backend
 
-StockPilot supports linked shopkeeper numbers, inventory queries, confirmed stock changes, and low-stock alerts through Meta's WhatsApp Cloud API.
+Deploy on **Render**
 
-1. Create a Meta app with WhatsApp enabled and register a business phone number.
-2. Set the webhook callback to `https://YOUR_BACKEND/api/whatsapp/webhook` and subscribe to the `messages` field.
-3. Use the same random value for Meta's webhook verification token and `WHATSAPP_VERIFY_TOKEN`.
-4. Create an approved utility template named `stockpilot_low_stock` with three body variables, for example: `Low stock alert: {{1}} has {{2}} remaining (threshold {{3}}).`
-5. Configure the backend environment:
+Environment Variables:
 
-   ```env
-   WHATSAPP_ACCESS_TOKEN=your_permanent_system_user_token
-   WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
-   WHATSAPP_BUSINESS_NUMBER=919999999999
-   WHATSAPP_VERIFY_TOKEN=your_random_verification_token
-   WHATSAPP_LOW_STOCK_TEMPLATE=stockpilot_low_stock
-   WHATSAPP_TEMPLATE_LANGUAGE=en_US
-   WHATSAPP_GRAPH_VERSION=v23.0
-   META_APP_SECRET=your_meta_app_secret
-   ```
-
-After deployment, each shopkeeper can open **Profile → WhatsApp Integration**, generate a ten-minute code, and send it to the configured business number. Never commit these credentials to Git.
-
-### Backend
-* `npm start`: Starts the production server.
-* `npm run dev`: Starts Node server with nodemon file watching.
-
-### Frontend
-* `npm run build`: Type-checks TypeScript files and compiles the minified production assets into `dist/`.
-* `npm run preview`: Hosts the built `dist/` folder locally to test production builds before deploying.
-* `npm run lint`: Performs static analysis lint checks.
+* MONGO_URI
+* GROQ_API_KEY
+* GROQ_MODEL
+* JWT_SECRET
+* CORS_ORIGINS
+* WhatsApp Cloud API credentials
 
 ---
 
-<p align="center">Built with ❤️ for kirana store owners across India during the Hackathon</p>
+## Frontend
+
+Deploy on **Vercel**
+
+Environment Variable
+
+```
+VITE_API_URL=https://your-render-api-url
+```
+
+---
+
+# 💡 Future Scope
+
+* Voice Notes
+* Regional Language Support
+* OCR Bill Scanner
+* Barcode Scanner
+* GST Report Generation
+* AI Sales Prediction
+* Demand Forecasting
+* Supplier Integration
+* Smart Purchase Recommendations
+
+---
+
+# 🎯 Challenges Solved
+
+* WhatsApp Cloud API Integration
+* Webhook Verification
+* Natural Language Processing
+* AI Conversation Memory
+* Real-Time Inventory Synchronization
+* MongoDB Integration
+* Dashboard Synchronization
+
+---
+
+# 🌍 Real-World Impact
+
+StockPilot is designed for:
+
+* Kirana Stores
+* Grocery Shops
+* Medical Stores
+* Stationery Shops
+* Bakeries
+* Hardware Stores
+* Small Retail Businesses
+
+---
+
+# ❤️ Why StockPilot?
+
+| Traditional Inventory Software | StockPilot             |
+| ------------------------------ | ---------------------- |
+| Requires separate software     | Works through WhatsApp |
+| Complex interface              | Natural conversation   |
+| Employee training              | No training required   |
+| Expensive subscriptions        | Affordable & scalable  |
+| Manual inventory updates       | AI-powered automation  |
+
+---
+
+# 👨‍💻 Built During Hackathon
+
+StockPilot demonstrates how conversational AI, persistent memory, and messaging platforms can transform inventory management for millions of small businesses across India by making technology accessible through tools they already use every day.
