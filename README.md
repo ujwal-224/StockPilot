@@ -19,7 +19,7 @@ affordable and intuitive solution for India's small retailers.
 
 ------------------------------------------------------------------------
 
-# ✨ Why StockPilot?
+#  Why StockPilot?
 
 Small shopkeepers still rely on:
 
@@ -46,9 +46,9 @@ removing the complexity of traditional inventory software.
 
 ------------------------------------------------------------------------
 
-# 🚀 Features
+#  Features
 
-## 💬 Natural Language Inventory Management
+##  Natural Language Inventory Management
 
 Manage inventory using simple conversational commands.
 
@@ -63,7 +63,7 @@ Simple, conversational interactions designed for ease of use.
 
 ------------------------------------------------------------------------
 
-## 🧠 AI-Powered Natural Language Understanding
+##  AI-Powered Natural Language Understanding
 
 The AI understands multiple ways of expressing the same action.
 
@@ -85,14 +85,14 @@ and updates inventory automatically.
 
 ------------------------------------------------------------------------
 
-## 🧠 Persistent Conversation Memory (Mem0)
+##  Persistent Conversation Memory (Mem0)
 
 Mem0 allows the assistant to remember previous interactions, enabling
 natural follow-up conversations and better context understanding.
 
 ------------------------------------------------------------------------
 
-## ⚡ Fast AI Processing with Groq
+##  Fast AI Processing with Groq
 
 StockPilot uses Groq for:
 
@@ -103,7 +103,7 @@ StockPilot uses Groq for:
 
 ------------------------------------------------------------------------
 
-## 📦 Inventory Management
+##  Inventory Management
 
 -   Add products
 -   Edit products
@@ -114,7 +114,7 @@ StockPilot uses Groq for:
 
 ------------------------------------------------------------------------
 
-## 📒 Digital Transactions Ledger
+##  Digital Transactions Ledger
 
 Automatically records:
 
@@ -126,7 +126,7 @@ Inspired by the traditional Bahi-Khata bookkeeping system.
 
 ------------------------------------------------------------------------
 
-## 📊 Analytics Dashboard
+##  Analytics Dashboard
 
 Provides:
 
@@ -139,7 +139,7 @@ Provides:
 
 ------------------------------------------------------------------------
 
-# 🏗 Architecture
+#  Architecture
 
 ``` text
 Store Owner
@@ -162,7 +162,7 @@ React Dashboard
 
 ------------------------------------------------------------------------
 
-# 🔄 Workflow
+#  Workflow
 
 User Input
 
@@ -209,7 +209,7 @@ Remaining Stock: 37
 
 ------------------------------------------------------------------------
 
-# 🛠 Technology Stack
+#  Technology Stack
 
 ## Frontend
 
@@ -275,7 +275,7 @@ StockPilot/
 
 ------------------------------------------------------------------------
 
-# 🚀 Local Setup
+#  Local Setup
 
 ## Backend
 
@@ -327,7 +327,7 @@ Open http://localhost:5173
 
 ------------------------------------------------------------------------
 
-# ☁️ Deployment
+#  Deployment
 
 ## Backend
 
@@ -353,7 +353,7 @@ VITE_API_URL=https://your-render-api-url
 
 ------------------------------------------------------------------------
 
-# 💡 Future Scope
+#  Future Scope
 
 -   WhatsApp Integration
 -   Voice Notes
@@ -368,7 +368,7 @@ VITE_API_URL=https://your-render-api-url
 
 ------------------------------------------------------------------------
 
-# 🎯 Challenges Solved
+#  Challenges Solved
 
 -   AI-powered natural language processing
 -   Inventory synchronization
@@ -378,7 +378,7 @@ VITE_API_URL=https://your-render-api-url
 -   Integretion of Mem0 and Gnani.ai
 ------------------------------------------------------------------------
 
-# 🌍 Real-World Impact
+#  Real-World Impact
 
 Designed for:
 
@@ -391,7 +391,7 @@ Designed for:
 
 ------------------------------------------------------------------------
 
-# ❤️ Why StockPilot?
+#  Why StockPilot?
 
   Traditional Inventory Software   StockPilot
   -------------------------------- -------------------------------
@@ -403,7 +403,7 @@ Designed for:
 
 ------------------------------------------------------------------------
 
-# 👨‍💻 Built During Hackathon
+#  Built During Hackathon
 
 StockPilot demonstrates how conversational AI, persistent memory, and
 intelligent analytics can transform inventory management for millions of
