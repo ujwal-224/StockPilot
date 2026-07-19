@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import axios from 'axios'
+import { createWhatsAppLinkCode, getWhatsAppStatus, type WhatsAppStatus } from '../services/whatsappService'
 
 const SAVED_NUMBER_KEY = 'stockpilot.whatsapp.recipient'
 
@@ -21,8 +23,45 @@ export default function WhatsAppIntegration({ onBack }: { onBack: () => void }) 
   const [phoneNumber, setPhoneNumber] = useState(() => localStorage.getItem(SAVED_NUMBER_KEY) || '')
   const [message, setMessage] = useState(messageTemplates[0].message)
   const [error, setError] = useState('')
+  const [status, setStatus] = useState<WhatsAppStatus | null>(null)
+  const [linkCode, setLinkCode] = useState('')
+  const [expiresAt, setExpiresAt] = useState('')
+  const [linking, setLinking] = useState(false)
 
   const normalizedNumber = useMemo(() => phoneNumber.replace(/\D/g, ''), [phoneNumber])
+
+  useEffect(() => {
+    getWhatsAppStatus().then(setStatus).catch(() => setStatus(null))
+  }, [])
+
+  useEffect(() => {
+    if (!linkCode || status?.linked) return
+    const timer = window.setInterval(() => {
+      getWhatsAppStatus().then(setStatus).catch(() => undefined)
+    }, 5000)
+    return () => window.clearInterval(timer)
+  }, [linkCode, status?.linked])
+
+  const generateLinkCode = async () => {
+    setLinking(true)
+    setError('')
+    try {
+      const result = await createWhatsAppLinkCode()
+      setLinkCode(result.code)
+      setExpiresAt(result.expiresAt)
+      setStatus((current) => current ? { ...current, businessNumber: result.businessNumber } : current)
+    } catch (requestError) {
+      setError(axios.isAxiosError(requestError) ? requestError.response?.data?.message || 'Unable to generate linking code.' : 'Unable to generate linking code.')
+    } finally {
+      setLinking(false)
+    }
+  }
+
+  const openTwilioLink = () => {
+    const sandboxNumber = status?.businessNumber.replace(/\D/g, '')
+    if (!sandboxNumber || !linkCode) return
+    window.open(`https://wa.me/${sandboxNumber}?text=${encodeURIComponent(`LINK ${linkCode}`)}`, '_blank', 'noopener,noreferrer')
+  }
 
   const openWhatsApp = () => {
     if (normalizedNumber.length < 8 || normalizedNumber.length > 15) {
@@ -60,6 +99,34 @@ export default function WhatsAppIntegration({ onBack }: { onBack: () => void }) 
       </div>
 
       {error && <div className="p-3 rounded-lg bg-stock-red/10 text-stock-red text-sm">{error}</div>}
+
+      <section className="ledger-card p-5 space-y-4">
+        <div>
+          <h3 className="font-bold text-lg">Automatic stock replies</h3>
+          <p className="text-sm text-on-surface-variant mt-1">Link this StockPilot shop to your phone before sending stock commands to the Twilio Sandbox.</p>
+        </div>
+        {status?.linked ? (
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-stock-green/10 text-stock-green">
+            <span className="material-symbols-outlined">check_circle</span>
+            <div><p className="font-semibold">WhatsApp linked</p><p className="text-xs">+{status.phoneNumber}</p></div>
+          </div>
+        ) : !linkCode ? (
+          <button type="button" disabled={linking || status?.configured === false} onClick={generateLinkCode} className="w-full h-11 bg-primary text-white rounded-lg font-semibold disabled:opacity-50">
+            {linking ? 'Generating…' : 'Generate shop linking code'}
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className="text-center p-4 rounded-lg bg-tertiary-fixed">
+              <p className="text-xs uppercase tracking-wider">Your 10-minute code</p>
+              <p className="text-3xl font-bold tracking-widest text-primary mt-1">{linkCode}</p>
+              <p className="text-xs mt-2">Expires {new Date(expiresAt).toLocaleTimeString()}</p>
+            </div>
+            <button type="button" disabled={!status?.businessNumber} onClick={openTwilioLink} className="w-full h-11 bg-[#25D366] text-white rounded-lg font-semibold disabled:opacity-50">Send code to Twilio Sandbox</button>
+          </div>
+        )}
+        {status?.configured === false && <p className="text-xs text-stock-red">Twilio is not configured on the backend yet.</p>}
+        <p className="text-xs text-on-surface-variant">After linking, send <strong>HELP</strong>, <strong>STOCK rice</strong>, <strong>LOW</strong>, or <strong>OUT</strong> to the Sandbox number.</p>
+      </section>
 
       <section className="ledger-card p-5 space-y-5">
         <div>

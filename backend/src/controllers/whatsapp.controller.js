@@ -3,7 +3,10 @@ import WhatsAppIdentity from '../models/WhatsAppIdentity.js';
 import WhatsAppLinkCode from '../models/WhatsAppLinkCode.js';
 import WhatsAppMessage from '../models/WhatsAppMessage.js';
 import { handleWhatsAppCommand } from '../services/whatsapp-command.service.js';
-import { isWhatsAppConfigured, sendTextMessage, verifyWebhookSignature } from '../services/whatsapp.service.js';
+import {
+  createTwilioReply, isWhatsAppConfigured, sendTextMessage,
+  verifyTwilioSignature, verifyWebhookSignature,
+} from '../services/whatsapp.service.js';
 
 const hashCode = (code) => crypto.createHash('sha256').update(String(code).trim().toUpperCase()).digest('hex');
 
@@ -14,7 +17,7 @@ export const getWhatsAppStatus = async (req, res, next) => {
       success: true,
       data: {
         configured: isWhatsAppConfigured(),
-        businessNumber: process.env.WHATSAPP_BUSINESS_NUMBER || '',
+        businessNumber: process.env.WHATSAPP_BUSINESS_NUMBER || process.env.TWILIO_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '',
         linked: identity?.status === 'LINKED',
         phoneNumber: identity?.phoneNumber || '',
         lowStockAlertsEnabled: identity?.lowStockAlertsEnabled ?? true,
@@ -39,7 +42,7 @@ export const createLinkCode = async (req, res, next) => {
       { shop: req.auth.shopId, membership: req.auth.membershipId, status: 'PENDING' },
       { upsert: true, new: true },
     );
-    return res.status(201).json({ success: true, data: { code, expiresAt: new Date(Date.now() + 10 * 60_000), businessNumber: process.env.WHATSAPP_BUSINESS_NUMBER || '' } });
+    return res.status(201).json({ success: true, data: { code, expiresAt: new Date(Date.now() + 10 * 60_000), businessNumber: process.env.WHATSAPP_BUSINESS_NUMBER || process.env.TWILIO_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '' } });
   } catch (error) { return next(error); }
 };
 
@@ -99,4 +102,35 @@ export const receiveWhatsAppWebhook = async (req, res) => {
     }
   }
   return res.sendStatus(200);
+};
+
+export const receiveTwilioWebhook = async (req, res) => {
+  const webhookUrl = process.env.TWILIO_WEBHOOK_URL || `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  if (!verifyTwilioSignature(webhookUrl, req.body, req.headers['x-twilio-signature'])) return res.sendStatus(403);
+
+  const messageId = String(req.body.MessageSid || '');
+  const phoneNumber = String(req.body.From || '').replace(/^whatsapp:\+?/, '').replace(/\D/g, '');
+  const text = String(req.body.Body || '');
+  if (!messageId || !phoneNumber) return res.status(400).type('text/xml').send(createTwilioReply('Invalid WhatsApp message.'));
+
+  try {
+    await WhatsAppMessage.create({ messageId, phoneNumber, direction: 'INBOUND' });
+  } catch (error) {
+    if (error.code === 11000) return res.status(200).type('text/xml').send(createTwilioReply(''));
+    console.error('Unable to record Twilio WhatsApp message:', error);
+    return res.status(200).type('text/xml').send(createTwilioReply('StockPilot is temporarily unavailable. Please try again.'));
+  }
+
+  try {
+    const reply = await handleWhatsAppCommand({
+      phoneNumber,
+      displayName: String(req.body.ProfileName || ''),
+      text,
+      hashLinkCode: hashCode,
+    });
+    return res.status(200).type('text/xml').send(createTwilioReply(reply));
+  } catch (error) {
+    console.error('Twilio WhatsApp command failed:', error);
+    return res.status(200).type('text/xml').send(createTwilioReply('StockPilot could not process that message. Please try again.'));
+  }
 };
